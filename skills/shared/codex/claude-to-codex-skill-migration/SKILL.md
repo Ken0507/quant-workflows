@@ -76,6 +76,7 @@ Claude frontmatter 中的额外 UI 字段不得直接丢失：
 
 - `metadata.short-description` -> `agents/openai.yaml` 的 `short_description`
 - `metadata.argument-hint` -> 写入 `default_prompt` 或 `SKILL.md` 的 `## Inputs` / 使用说明中
+- 如果源 skill 的描述没有清楚表达**何时调用**，可以在不改变语义边界的前提下补一小句“适用于/用于……”，帮助 Codex 正确触发 skill；不得借机扩张或收缩适用范围
 
 如果目标目录没有 `agents/openai.yaml`，必须创建。
 
@@ -187,7 +188,7 @@ Claude frontmatter 中的额外 UI 字段不得直接丢失：
 要求：
 
 - `display_name`：简洁、稳定、面向人
-- `short_description`：优先吸收 Claude 的 `short-description`
+- `short_description`：优先吸收 Claude 的 `short-description`，必要时补足触发场景
 - `default_prompt`：要明确这是什么 skill、何时使用、以及关键授权前提
 
 如果该 skill 强依赖多 agent 协作，`default_prompt` 中应写明：

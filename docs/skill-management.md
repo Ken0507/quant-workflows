@@ -179,7 +179,7 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 - `issue-update`
 - `write-research-log`
 
-### shared / codex (7)
+### shared / codex (8)
 
 - `claude-to-codex-skill-migration`
 - `git-commit-and-push`
@@ -188,6 +188,7 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 - `issue-open`
 - `issue-search`
 - `issue-update`
+- `sync-skills`
 
 ### hft / claude (14)
 
@@ -231,4 +232,4 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 
 - `crypto-deep-factor-research`
 
-**Totals**: 28 Claude + 15 Codex = **43 skills**.
+**Totals**: 28 Claude + 16 Codex = **44 skills**.

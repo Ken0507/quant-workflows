@@ -58,10 +58,10 @@ Editing a `SKILL.md` in this repo automatically updates every consumer (Claude C
 
 | Category   | Claude | Codex | Total |
 |------------|-------:|------:|------:|
-| shared     |      6 |     7 |    13 |
+| shared     |      6 |     8 |    14 |
 | hft        |     14 |     7 |    21 |
 | crypto     |      8 |     1 |     9 |
-| **Total**  | **28** |**15** |**43** |
+| **Total**  | **28** |**16** |**44** |
 
 Codex coverage still lags Claude (this is expected — Codex skills are being backfilled from the Claude versions one by one; see `skills/shared/codex/claude-to-codex-skill-migration/`).
 
