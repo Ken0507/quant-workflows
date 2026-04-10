@@ -1,4 +1,4 @@
 interface:
   display_name: "Claude To Codex Skill Sync"
   short_description: "Incrementally sync one existing Codex skill from later Claude source updates"
-  default_prompt: "Use $claude-to-codex-skill-sync when a single Claude skill in quant-workflows has changed and its existing Codex sibling should be updated without full remigration. Find the latest commit that touched the Codex target skill as the baseline, inspect all later Claude commits for the source skill, and sync only the resulting semantic delta while preserving Codex-specific platform adaptations under the same boundary rules as $claude-to-codex-skill-migration."
+  default_prompt: "Use $claude-to-codex-skill-sync when a single Claude skill in quant-workflows has changed and its existing Codex sibling should be updated without full remigration. Find the latest commit that touched the Codex target skill as the baseline, inspect all later Claude commits for the source skill, sync only the resulting semantic delta while preserving Codex-specific platform adaptations under the same boundary rules as $claude-to-codex-skill-migration, and commit the updated Codex skill if any real changes were applied."

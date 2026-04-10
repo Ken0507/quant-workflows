@@ -64,12 +64,13 @@ subagent prompt 模板：
    - 来源 label：agent:codex
    - 不加 P0/P1/P2 和 needs-triage
 
-3. **起草 issue 正文**，格式：
+3. **起草 issue 正文**，格式（**前两行必须是 Time 和 Participants**）：
+
+Time: YYYY-MM-DD HH:MM:SS
+Participants: cken + Codex
 
 # {话题标题}
 
-**Date**: YYYY-MM-DD
-**Participants**: cken + Codex
 **Type**: Discussion / Design / Research
 
 ---

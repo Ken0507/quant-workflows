@@ -49,3 +49,10 @@
 - [ ] 已说明同步了哪些文件 / 片段
 - [ ] 已说明保留了哪些 Codex 平台适配
 - [ ] 如有歧义，已明确列为待确认项
+
+## 8. Commit Discipline
+
+- [ ] 如果本次有实际改动，已只 stage 目标 Codex skill 目录
+- [ ] 已创建同步 commit，而不是把改动留在工作树里
+- [ ] commit message 清楚表达“同步了哪个 skill”
+- [ ] commit body 已记录 `BASELINE_COMMIT` 与本次读取的 Claude commits

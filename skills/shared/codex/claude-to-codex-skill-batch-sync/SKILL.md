@@ -1,13 +1,13 @@
 ---
 name: claude-to-codex-skill-batch-sync
-description: "检查 quant-workflows 中现有的 Codex skills 是否落后于对应 Claude 源 skill，并对有更新的 skill 逐个做增量同步。适用于：批量巡检 shared/hft/crypto/all 范围内的已有 Codex skills；不新建缺失的 Codex sibling，只更新已经存在的那些。"
+description: "检查 quant-workflows 中现有的 Codex skills 是否落后于对应 Claude 源 skill，并对有更新的 skill 逐个做增量同步；全部成功后提交一个批量同步 commit。适用于：批量巡检 shared/hft/crypto/all 范围内的已有 Codex skills；不新建缺失的 Codex sibling，只更新已经存在的那些。"
 ---
 
 # Claude To Codex Skill Batch Sync
 
 ## Goal
 
-批量检查 quant-workflows 中**已经存在的 Codex skills**，找出哪些对应的 Claude 源 skill 在其基线 commit 之后又发生了更新，然后只对这些命中的 skill 逐个做增量同步。
+批量检查 quant-workflows 中**已经存在的 Codex skills**，找出哪些对应的 Claude 源 skill 在其基线 commit 之后又发生了更新，然后只对这些命中的 skill 逐个做增量同步，并在整批成功后创建一个 batch commit，使所有已同步 skill 的基线同时前移。
 
 这个 skill 是**批量编排器**，不是首次迁移工具，也不是单 skill 增量同步器。
 
@@ -41,6 +41,7 @@ $claude-to-codex-skill-batch-sync crypto
 - **基线仍来自目标 Codex skill**：每个 skill 的是否过期，都以该 skill 自己最近一次 Codex commit 为基线。
 - **Codex-only skills 允许跳过**：如果一个 Codex skill 没有 Claude 对应源，它不算错误，只记为 skip。
 - **先扫描后修改**：先完成全量扫描和分类，再开始逐个同步，避免半程切换导致统计不一致。
+- **批量同步完成后必须 commit**：如果本次批量已更新任一 skill，却不提交，下次扫描仍会把这些 skill 识别为 outdated。
 
 ## Inputs
 
@@ -182,7 +183,38 @@ git log --reverse --format=%H BASELINE_COMMIT..HEAD -- skills/<category>/claude/
 - 不自动创建缺失的 Codex sibling
 - 需要首次迁移时，让用户显式调用 `$claude-to-codex-skill-migration`
 
-### 9. 最终汇总
+### 9. 提交批量同步结果
+
+如果本次不是 dry-run，且至少成功同步了 1 个 skill，并且没有 `blocked` 项：
+
+1. 只 stage 本次被更新的 Codex skill 目录
+2. 创建一个 batch commit，推荐格式：
+
+```text
+Sync outdated Codex skills from latest Claude updates
+```
+
+3. commit body 至少列出：
+   - 本次范围参数
+   - 被同步的 skills 列表
+   - 每个 skill 的 `BASELINE_COMMIT`
+4. 默认追加：
+
+```text
+Co-authored-by: Codex <codex@openai.com>
+```
+
+如果本次出现 `blocked`，且在被阻塞前已经同步了部分 skill：
+
+- 停止自动提交
+- 先向用户汇报已完成 / 未完成状态
+- 由用户决定是否提交已完成子集
+
+如果本次为 dry-run，或没有任何实际改动：
+
+- 不创建 commit
+
+### 10. 最终汇总
 
 最终至少报告以下四组结果：
 
@@ -198,6 +230,7 @@ git log --reverse --format=%H BASELINE_COMMIT..HEAD -- skills/<category>/claude/
 1. 扫描选定范围内所有已有 Codex skills 的 baseline 状态
 2. 只对 `outdated` 的已有 Codex skills 执行增量同步
 3. 跳过没有 Claude 对应源的 Codex-only skills
+4. 在整批同步成功后创建一个 batch commit
 
 ## Forbidden Changes
 
@@ -208,6 +241,7 @@ git log --reverse --format=%H BASELINE_COMMIT..HEAD -- skills/<category>/claude/
 3. 在没有形成全量扫描摘要前就开始修改
 4. 对 `blocked` skill 擅自选择一种映射继续同步
 5. 把 `codex-only` skill 误报成异常
+6. 批量同步已有实际改动却不提交，导致基线不前移
 
 ## When To Ask The User
 
@@ -226,6 +260,7 @@ git log --reverse --format=%H BASELINE_COMMIT..HEAD -- skills/<category>/claude/
 2. 对每个 `outdated` skill 的基线信息与 commit 列表
 3. 更新后的 Codex skill 目录（仅限命中的已有 skills）
 4. 一份最终分类汇总：`synced / up-to-date / codex-only skipped / blocked`
+5. 如本次无阻塞且有实际改动：批量提交后的 commit hash
 
 ## Final Check
 

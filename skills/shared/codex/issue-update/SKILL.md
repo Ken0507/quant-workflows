@@ -61,9 +61,12 @@ subagent prompt 模板：
    gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --comments
    了解之前记录到哪里了。
 
-2. **起草 comment**，格式：
+2. **起草 comment**，格式（**前两行必须是 Time 和 Participants**）：
 
-## 进展更新 (YYYY-MM-DD)
+Time: YYYY-MM-DD HH:MM:SS
+Participants: cken + Codex
+
+## 进展更新
 
 ### 本次讨论
 {2-5 句话概括}

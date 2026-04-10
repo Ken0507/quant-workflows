@@ -44,3 +44,10 @@
 - [ ] 已汇总 `up-to-date`
 - [ ] 已汇总 `codex-only skipped`
 - [ ] 已汇总 `blocked`
+
+## 8. Commit Discipline
+
+- [ ] 如果本次批量存在实际改动且无 `blocked`，已创建 batch commit
+- [ ] batch commit 只 stage 了本次被更新的 Codex skill 目录
+- [ ] commit message 清楚表达“批量同步了过期 Codex skills”
+- [ ] commit body 已记录本次范围、被同步的 skills 和各自 `BASELINE_COMMIT`
