@@ -47,12 +47,26 @@ subagent prompt 模板：
 
 ## 执行步骤
 
-1. **读取 issue 全貌**：
+1. **完整读取 issue 历史（必须！）**：
    gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues
    gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --comments
-   了解完整的讨论历程。
 
-2. **结合 issue 记录和主进程概括，起草 conclusion**，格式（**前两行必须是 Time 和 Participants**）：
+   **重要原则**：
+   - issue 上的 comments 可能来自多种来源：本次会话的 Claude Code、之前的 Claude 会话、Codex、其他 agent、或人类（cken/lgj 等）
+   - 主进程提供的"最终成果概括"只反映**当前 Claude 会话**的视角，可能遗漏其他 agent 或之前会话的产出
+   - 因此**必须**完整阅读所有 comment（不要跳读、不要只看最后几条），把每条 comment 都当作独立信息源
+   - 对每条 comment，识别其作者、时间、贡献的内容（决策/产出/疑问等）
+   - 如果同一话题在不同 comment 中有冲突或迭代，按时间线整理出真实的演进过程
+
+2. **整合所有信息源后起草 conclusion**：
+   conclusion 必须综合反映：
+   - 当前会话的产出（来自主进程的"最终成果概括"）
+   - issue body 的原始定义
+   - 所有 comments 的累积贡献（包括非当前会话的）
+   
+   如果发现某个 comment 提到的产出/决策没有出现在主进程概括中，**必须**纳入 conclusion 而不是忽略。
+
+   格式（**前两行必须是 Time 和 Participants**）：
 
 Time: YYYY-MM-DD HH:MM:SS
 Participants: cken + Claude Code
