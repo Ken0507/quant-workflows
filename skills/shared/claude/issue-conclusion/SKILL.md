@@ -52,9 +52,12 @@ subagent prompt 模板：
    gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --comments
    了解完整的讨论历程。
 
-2. **结合 issue 记录和主进程概括，起草 conclusion**，格式：
+2. **结合 issue 记录和主进程概括，起草 conclusion**，格式（**前两行必须是 Time 和 Participants**）：
 
-## Conclusion (YYYY-MM-DD)
+Time: YYYY-MM-DD HH:MM:SS
+Participants: cken + Claude Code
+
+## Conclusion
 
 ### 问题
 {一句话说清楚要解决什么}
