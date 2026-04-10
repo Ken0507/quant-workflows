@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude To Codex Skill Migration"
+  short_description: "Migrate Claude skills into semantically equivalent Codex skills"
+  default_prompt: "Use this skill to migrate an existing Claude Code skill in quant-workflows into a high-fidelity Codex skill. Copy the Claude skill tree first, apply only platform-specific transforms, default migrated Codex subagents to model gpt-5.4 with reasoning xhigh unless the user says otherwise, keep prompts/workflows/checklists intact, and run the fidelity audit before finishing."
