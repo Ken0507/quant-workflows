@@ -180,8 +180,9 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 - `sync-skills`
 - `write-research-log`
 
-### shared / codex (9)
+### shared / codex (10)
 
+- `claude-to-codex-skill-batch-sync`
 - `claude-to-codex-skill-sync`
 - `claude-to-codex-skill-migration`
 - `git-commit-and-push`
@@ -234,4 +235,4 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 
 - `crypto-deep-factor-research`
 
-**Totals**: 29 Claude + 17 Codex = **46 skills**.
+**Totals**: 29 Claude + 18 Codex = **47 skills**.

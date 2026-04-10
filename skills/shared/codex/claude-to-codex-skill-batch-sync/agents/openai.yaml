@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude To Codex Skill Batch Sync"
+  short_description: "Scan existing Codex skills for later Claude updates and sync only the outdated ones"
+  default_prompt: "Use $claude-to-codex-skill-batch-sync to scan existing Codex skills in quant-workflows and update only those whose Claude source skill has newer commits after each skill's Codex baseline commit. Support scope values all/shared/hft/crypto, skip Codex-only skills without treating them as errors, and do not create any missing Codex sibling during this batch run."
