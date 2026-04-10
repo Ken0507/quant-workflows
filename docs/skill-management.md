@@ -164,23 +164,25 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 
 - **Codex auto-discovery of project-level `.codex/skills/`**: it is assumed that Codex picks up skills from a per-project `.codex/skills/` directory the same way Claude Code does, but this has not been exhaustively verified. When adding the first Codex skill to a new project, manually confirm that Codex surfaces it before declaring coverage complete.
 - **`poly_projects` not managed here**: ~4 poly-specific skills currently live outside this repo. When that project becomes active they should be moved in under a new `skills/poly/` category.
-- **Codex coverage gap**: only 15 / 28 Claude skills currently have Codex siblings. Backfilling is an ongoing task.
+- **Codex coverage gap**: only 13 / 29 Claude skills currently have Codex siblings. Several Codex-only operator skills also exist. Backfilling is an ongoing task.
 
 ---
 
 ## Current Skill Inventory (snapshot)
 
-### shared / claude (6)
+### shared / claude (7)
 
 - `hft-sdk-issue-submit`
 - `issue-conclusion`
 - `issue-open`
 - `issue-search`
 - `issue-update`
+- `sync-skills`
 - `write-research-log`
 
-### shared / codex (8)
+### shared / codex (9)
 
+- `claude-to-codex-skill-sync`
 - `claude-to-codex-skill-migration`
 - `git-commit-and-push`
 - `hft-sdk-issue-submit`
@@ -232,4 +234,4 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 
 - `crypto-deep-factor-research`
 
-**Totals**: 28 Claude + 16 Codex = **44 skills**.
+**Totals**: 29 Claude + 17 Codex = **46 skills**.
