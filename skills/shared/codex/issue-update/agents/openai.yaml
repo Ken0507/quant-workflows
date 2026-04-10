@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue Update"
+  short_description: "Append a structured progress update comment to an existing issue"
+  default_prompt: "Use $issue-update to append a structured progress comment to an existing hft-sdk-issues issue. Summarize the new progress in the main thread, then delegate issue reading, comment drafting, and gh issue comment execution to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."

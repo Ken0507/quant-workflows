@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue Conclusion"
+  short_description: "Post a conclusion comment and mark an issue ready to close"
+  default_prompt: "Use $issue-conclusion to summarize and close out an hft-sdk-issues discussion. Summarize the final outcome in the main thread, then delegate issue review, conclusion drafting, comment posting, and ready-to-close labeling to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."

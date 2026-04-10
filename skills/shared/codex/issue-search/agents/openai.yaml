@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue Search"
+  short_description: "Search hft-sdk-issues by keyword, topic, or label"
+  default_prompt: "Use $issue-search to search hft-sdk-issues by keyword, topic, or label. Determine the search terms in the main thread, then delegate the actual gh issue search and result synthesis to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."
