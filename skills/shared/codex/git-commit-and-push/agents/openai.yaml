@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Commit & Push"
+  short_description: "Commit and push with Codex co-author trailer"
+  default_prompt: "Use $git-commit-and-push to commit and push changes with a Codex co-author trailer."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "OB Mode"
+  short_description: "激活 Codex 的 ob-investigator 研究环境"
+  default_prompt: "Use this skill to prepare Codex for order book investigation by validating the ob-investigator MCP setup, reading the Playground prompt, and confirming the OB toolchain is ready."

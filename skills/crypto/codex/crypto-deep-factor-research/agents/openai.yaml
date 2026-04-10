@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Deep Factor Research"
+  short_description: "按 crypto Phase0-4 编排执行深度因子研究流程"
+  default_prompt: "Use $crypto-deep-factor-research to run the crypto deep factor research workflow from Phase 0 to Phase 4, including Trade/L2 investigation, factor design, validation, logging, and review gates. You are explicitly authorized to use sub-agents / multi-agent parallel work for Reviewer, Compliance Monitor, Logger, and Phase 1 saturation review without asking again."
