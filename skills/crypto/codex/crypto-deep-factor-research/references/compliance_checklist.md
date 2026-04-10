@@ -35,16 +35,11 @@
 
 ## Phase 0 合规检查
 
-- [ ] 是否确认 `crypto-research` 工具链可用？若不可用，是否明确记录阻塞？
-- [ ] 种子想法来源是否明确？（用户给出的研究方向或 idea 文档条目）
+- [ ] 如果当前平台需要子 Agent 显式授权，是否已在 Phase 0 取得授权？
+- [ ] 种子想法来源是否明确？（用户给出的研究方向）
 - [ ] 是否产出了 §0 部分（核心假设、直觉来源、微观行为猜测、与已有因子关系）？
-- [ ] 是否在 `research_log.md` 中记录了 `[START]` 条目（UTC+8）？
+- [ ] 是否在 research_log.md 中记录了 [START] 条目（UTC+8）？
 - [ ] **是否未预定义因子列表**？（Phase 0 不应有具体因子定义）
-- [ ] 是否阅读了 `crypto_mcp/README.md`？
-- [ ] 是否阅读了 Zebra 研究员手册？
-- [ ] 如果 `friction_knowledge_base.md` 存在，是否已阅读？
-- [ ] 是否检查了已有因子与历史研究，并在 `research_log.md` 中明确记录本次研究的增量方向？
-- [ ] 是否新建了全新研究目录，而不是续写旧目录？
 
 ---
 
@@ -59,7 +54,7 @@
 
 ### 反踩线检查（重要）
 - [ ] agent 是否在刚好达到下限轮数时就停止了？ → **如果是，检查饱和论证是否充分**
-- [ ] `research_log.md` 中是否有明确的饱和论证？（"最近 2-3 轮不再有新发现"的具体说明）
+- [ ] research_log 中是否有明确的饱和论证？（"最近 2-3 轮不再有新发现"的具体说明）
 - [ ] 是否还有 Reviewer 提出但未通过调查回答的问题？ → 如果有，不应停止
 - [ ] 最后 2-3 轮是否仍有意外发现？ → 如果有，不应停止
 
@@ -74,17 +69,17 @@
 - [ ] 是否有新问题/新发现（驱动下一轮调查）？
 
 ### Reviewer 机制
-- [ ] 是否在**每一轮**调查后都独立触发了 Reviewer？（不接受合并、跳过、"此轮为补充不需 review"）
-- [ ] **逐轮 Reviewer 标记验证**：`research_log.md` 中是否有与调查轮数一致的 `[REVIEWER R{N}]` 标记？
+- [ ] 是否在**每一轮**调查后都独立触发了 Reviewer？（不接受合并、跳过、"此轮为补充不需review"）
+- [ ] **逐轮 Reviewer 标记验证**：research_log.md 中是否有与调查轮数一致的 `[REVIEWER R{N}]` 标记？
   - 抽查 2-3 个标记：标记后的审查意见是否有实质内容（不接受空白或纯"PASS"无理由）？
   - 检查是否存在"凑标记"行为（如所有标记的意见完全相同/过于模板化）
 - [ ] Reviewer 不通过的轮次是否进行了改进后重做（或替代调查）？
 - [ ] **Reviewer 不通过的轮次是否未被计入最低轮数？**（只有通过的轮次才计数）
-- [ ] 每次 Reviewer 意见和主进程回应是否被记录到 `research_report.md`？
+- [ ] 每次 Reviewer 意见和主进程回应是否被记录到 research_report.md？
 - [ ] Phase 1 终审 Reviewer 是否通过？
 
 ### research_report.md 完整性（Report 同步审计）
-- [ ] `research_report.md` 中已记录的调查轮次数是否与 `research_log.md` 中 `[REVIEWER R{N}]` 标记数一致？**如不一致 → 不合规（report 滞后），必须先补写再继续**
+- [ ] research_report.md 中已记录的调查轮次数是否与 research_log.md 中 `[REVIEWER R{N}]` 标记数一致？**如不一致 → 不合规（report 滞后），必须先补写再继续**
 - [ ] 抽查最近 2 轮的 report 记录是否包含完整五要素（目的/现象/假设对比/因子启示/新问题）？
 - [ ] 是否存在缺失的轮次记录？（逐轮对照，不接受"后续补充"）
 
@@ -93,28 +88,28 @@
 - [ ] 自主调查是否展现了独立思考（不是简单重复前序模式）？
 
 ### 统计分析
-- [ ] 统计分析使用的数据范围是否在研究集（`2026-01-01 ~ 2026-01-25`）内？
+- [ ] 统计分析使用的数据范围是否在研究集 (2026-01-01 ~ 2026-01-25) 内？
 - [ ] 是否有跨币种、跨日期的普遍性验证？
 
 ### 工具使用
-- [ ] 是否使用了 `crypto-research` 的多种工具组合？（不只是 `get_events`，也用了 `analyze_sweep`、`flow_analysis`、`liquidity_profile`、`get_book` 等）
+- [ ] 是否使用了 crypto_mcp 的多种工具组合？（不只是 get_events，也用了 analyze_sweep、flow_analysis、liquidity_profile、get_book 等）
 - [ ] L2 数据是否被使用？（在有 L2 的日期范围内应优先使用）
-- [ ] `inspect_bar` 是否被用来分析 AmountBar 内部构成？
+- [ ] inspect_bar 是否被用来分析 AmountBar 内部构成？
 
 ### 多币种覆盖
 - [ ] 是否在至少 3 个不同币种上观察了微观结构？
 - [ ] 是否对比了大市值（BTC/ETH）vs 小市值（DOGE/ADA）的差异？
 
 ### 数据纪律
-- [ ] 所有调查日期是否在研究集（`2026-01-01 ~ 2026-01-25`）内？
-- [ ] 是否有任何使用 `2026-02-06+` 数据的行为？→ **违规！**
+- [ ] 所有调查日期是否在研究集 (2026-01-01 ~ 2026-01-25) 内？
+- [ ] 是否有任何使用 2026-02-06+ 数据的行为？→ **违规！**
 
 ---
 
 ## Phase 2 合规检查
 
-- [ ] **Phase 转换状态同步**：Phase 1 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 `pending`。
-- [ ] 是否在 Phase 2 开始时重新阅读了 Skill 文档 §Phase 2 和 `crypto_mcp/README.md`？
+- [ ] **Phase 转换状态同步**：Phase 1 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 "pending"。
+- [ ] 是否在 Phase 2 开始时重新阅读了 Skill 文档 §Phase 2 和 crypto_mcp README？
 - [ ] Phase 1 终审是否已通过？（Phase 1 未通过不得进入 Phase 2）
 - [ ] 每个因子是否附有微观机制 rationale（来自 Phase 1 的哪个发现）？
 
@@ -126,14 +121,14 @@
 - [ ] **性能预检**：筛选脚本是否先对少量样本做了 dry-run 并确认运行时间合理？
 - [ ] 样本规模是否 ≥ 5 codes × 10 天？
 - [ ] 10 天是否为随机抽样（非连续日期）？
-- [ ] 数据范围是否在研究集（`2026-01-01 ~ 2026-01-25`）内？
+- [ ] 数据范围是否在研究集 (2026-01-01 ~ 2026-01-25) 内？
 - [ ] 是否同时执行了通道 A（线性 IC）和通道 B（非线性预测力）？
-- [ ] 主预测口径是否为 `ret_lag0_next100 ~ ret_lag0_next200`？
-- [ ] 是否拓展观察了 `next400`, `next800`？
+- [ ] 主预测口径是否为 ret_lag0_next100 ~ ret_lag0_next200？
+- [ ] 是否拓展观察了 next400, next800？
 
 ### 大样本泛化
 - [ ] 样本规模是否 ≥ 7 codes × 20 天？
-- [ ] 数据范围是否在研究墙（`2026-02-05`）内？
+- [ ] 数据范围是否在研究墙 (2026-02-05) 内？
 - [ ] 是否检查了小样本→大样本的 IC 衰减？
 
 ### 因子保留
@@ -149,19 +144,19 @@
 
 ## Phase 3 合规检查
 
-- [ ] **Phase 转换状态同步**：Phase 2 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 `pending`。
+- [ ] **Phase 转换状态同步**：Phase 2 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 "pending"。
 - [ ] **Phase 3 是否被执行了？**（Phase 3 不可跳过或与其他 Phase 合并。跳过 = 不合规）
-- [ ] 是否在 Phase 3 开始时重新阅读了 Skill 文档 §Phase 3 和 `crypto_mcp/README.md`？
+- [ ] 是否在 Phase 3 开始时重新阅读了 Skill 文档 §Phase 3 和 crypto_mcp README？
 - [ ] Phase 2 终审是否已通过？
-- [ ] 数据范围是否在 `2026-01-01 ~ 2026-02-05` 内？（不超过研究墙）
+- [ ] 数据范围是否在 2026-01-01 ~ 2026-02-05 内？（不超过研究墙）
 
 ### IC 矩阵
-- [ ] 是否覆盖了 `next100`, `next200`, `next400`, `next800` 四个 horizon？
-- [ ] 每个因子是否测试了 ≥ 3 档 `window/halflife`？
+- [ ] 是否覆盖了 next100, next200, next400, next800 四个 horizon？
+- [ ] 每个因子是否测试了 ≥ 3 档 window/halflife？
 - [ ] 矩阵中是否标注了统计显著性？
 
 ### 稳健性验证
-- [ ] 对每个保留因子，是否在 `research_log.md` 中记录了"最可能的失败条件"分析？
+- [ ] 对每个保留因子，是否在 research_log 中记录了"最可能的失败条件"分析？
 - [ ] 是否根据失败假设自主设计了针对性的稳健性实验？（不是机械跑 checklist）
 - [ ] 稳健性实验的结果是否被分析和讨论？（不只是贴数字，而是解读含义）
 - [ ] 如果发现了某个维度上的问题（如时段翻转、跨币种不一致），是否在因子定义中标注了已知限制？
@@ -178,7 +173,7 @@
 
 ## Phase 4 合规检查
 
-- [ ] **Phase 转换状态同步**：Phase 3 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 `pending`。
+- [ ] **Phase 转换状态同步**：Phase 3 终审 Reviewer 和 Compliance Monitor 的状态是否已在 `quality_review.md` 和 `research_log.md` 中更新为最终结果（passed/failed）？不得遗留 "pending"。
 - [ ] 最终 Reviewer 全面审查是否完成？
 - [ ] 最终 Reviewer 是否通过？
 
