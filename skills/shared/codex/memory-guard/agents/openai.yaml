@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory Guard"
+  short_description: "Start a Linux watchdog that kills Codex-spawned descendants when aggregate RSS crosses a threshold"
+  default_prompt: "Use $memory-guard before running a memory-heavy shell workload in this Codex session when you want a safety watchdog. Use the script at skills/shared/codex/memory-guard/memory_guard.sh, prefer `check` before `start`, and remember it only works on Linux and only targets Codex-spawned descendants unless `--root-pid` is set explicitly."
