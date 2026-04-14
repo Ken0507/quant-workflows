@@ -39,9 +39,64 @@ metadata:
 
 ---
 
-## 1. 批量执行
+## 1. 批量执行（推荐：并行 launcher）
 
-### 1.1 命令模板
+生产刷因子默认使用 `parallel_batch_runner.py`——它把 `(symbol × 日期窗口)` 按权重分片后并发拉起多个 `batch_runner` 子进程，整体比单进程快 N 倍（N ≈ workers）。
+
+### 1.1 命令模板（并行）
+
+```bash
+python /home/cken/crypto_world/zebra/tools/parallel_batch_runner.py \
+    --binary /home/cken/crypto_world/zebra_pool/${fa_lower}/code/build/batch_runner \
+    --symbols BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,ADAUSDT \
+    --start_date ${start_date} \
+    --end_date ${end_date} \
+    --threshold-dir /data/db/crypto/futures/world/bod_data/daily_thres_28800 \
+    --output_dir /data/db/crypto/futures/world/world_pool/${fa_lower} \
+    --l2-root /data/db/crypto/futures/tardis/binance-futures/incremental_book_L2 \
+    --chunk-days ${chunk_days} \
+    --workers 30 \
+    --skip_existing \
+    --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json
+```
+
+### 1.2 分片策略（重要）
+
+- **分片单元**：`(symbol, 连续日期子窗口)`。每个分片对应一个独立的 `batch_runner` 子进程。
+- **权重**：每个 symbol 的权重 = 日期范围内 `{data_root}/{symbol}/{symbol}-trades-{date}.feather` 文件总大小。
+- **分配算法**：初始每个 symbol 分到 1 片；剩余 `workers - N_symbols` 个 slot 按贪心分配——每轮挑当前 `weight/k` 最大的 symbol 增加一片。所以**权重大的 symbol（如 BTCUSDT / ETHUSDT）会被切得更多**，小币可能只保留 1 片。
+- **日期切分**：每个 symbol 的日期范围按最终 `k` 均分成连续子窗口（余数优先分给前面几段）。
+- **示例**：7 symbols + `--workers 30`，BTC 权重远大于其他：BTC 可能被切成 ~14 片、ETH ~7 片、其余各 1–3 片，总片数 = 30。
+- **Chunk 状态**：每个分片是独立子进程，agent 状态不跨分片持久化。即如果你传了 `--chunk-days 30`，每个子进程内部仍按 30 天一个 chunk 运行；但分片与分片之间 EMA / rolling 会冷启动。对性能敏感的 EMA 因子，建议 `chunk_days` 保持一致或把窗口设小一点接受冷启动代价。
+
+### 1.3 参数说明
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `--binary` | `batch_runner` 可执行文件路径（必须） | 无默认 |
+| `--symbols` | 7 个标准 universe，逗号分隔 | 全部 7 个 |
+| `--start_date` / `--end_date` | 日期范围 YYYY-MM-DD | 通常 `2024-01-01` ~ `2026-03-31` |
+| `--threshold-dir` | 动态阈值目录（必须） | 无默认 |
+| `--output_dir` | 输出根目录 | `world_pool/${fa_lower}` |
+| `--l2-root` | L2 订单簿数据根目录 | 可选（纯 trade 因子可省略） |
+| `--chunk-days` | 透传给每个子进程的 chunk 天数 | `0` |
+| `--workers` | 并发子进程数（分片总数） | `30` |
+| `--data_root` | Trade 数据根目录（用于权重估算 + 透传给子进程） | `/data/db/crypto/futures/binance_histroy/raw/trades` |
+| `--skip_existing` | 透传 | 建议始终启用 |
+| `--manifest` | 合并后 manifest 路径 | 可选 |
+| `--log-dir` | 每个分片的日志目录 | `<output_dir>/parallel_logs` |
+
+### 1.4 输出产物
+
+- **日志**：每个分片一个 `{symbol}_{idx:04d}.log`，默认落在 `<output_dir>/parallel_logs/` 下。第一行是完整命令行，后面是子进程 stdout+stderr 合流。
+- **Manifest**：
+  - 每个分片自己的 manifest 落在 `<manifest>.shards/{symbol}_{idx:04d}.json`。
+  - launcher 最后合并所有子 manifest 到 `--manifest` 指定的路径（entries 拼接、statistics 累加）。
+- **控制台输出**：启动时打印分片分配表（每个 symbol 几片 + 权重），运行时每个分片完成打印 `[i/N] symbol start..end OK/FAIL elapsed`，结束打印汇总和失败分片列表。
+
+### 1.5 回退：单进程直接调用 batch_runner
+
+仅用于调试 / smoke test / 只跑单 symbol 单天。生产刷全历史请用并行 launcher。
 
 ```bash
 /home/cken/crypto_world/zebra_pool/${fa_lower}/code/build/batch_runner \
@@ -56,19 +111,7 @@ metadata:
     --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json
 ```
 
-### 1.2 参数说明
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--symbols` | 7 个标准 universe，逗号分隔 | 全部 7 个 |
-| `--start_date` | 起始日期 YYYY-MM-DD | 通常 `2024-01-01` |
-| `--end_date` | 结束日期 YYYY-MM-DD | 通常 `2026-03-31` |
-| `--threshold-dir` | 动态阈值目录（必须） | 无默认，必填 |
-| `--output_dir` | 输出根目录 | `world_pool/${fa_lower}` |
-| `--l2-root` | L2 订单簿数据根目录 | Tardis 路径 |
-| `--chunk-days` | 每个 chunk 的天数 | `0`（整个范围一个 chunk） |
-| `--skip_existing` | 跳过已有输出的天 | 建议始终启用 |
-| `--manifest` | manifest 文件路径（断点续跑） | 可选 |
+此模式下是单进程串行：外层遍历 symbols、内层遍历 dates。完整覆盖 7 × 820 天约需要 N 小时（以具体因子复杂度为准）。
 
 ### 1.3 chunk-days 建议
 
@@ -211,13 +254,27 @@ print(f"Uniform schema: {len(schemas[0])} columns")
 
 ### 3.4 断点续跑
 
-使用 `--manifest` 参数：
+并行 launcher 完全支持续跑：每次启动会重新生成分片，但每个子进程透传 `--skip_existing`，已有输出的 (symbol, date) 会被跳过。
+
 ```bash
 # 首次运行
-./batch_runner ... --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json
+python .../parallel_batch_runner.py ... --workers 30 --skip_existing \
+    --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json
 
-# 中断后续跑（manifest 记录已完成的 date-symbol 对）
-./batch_runner ... --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json --skip_existing
+# 中断后直接同一条命令再跑一次即可：已完成的 (symbol, date) 自动跳过
+python .../parallel_batch_runner.py ... --workers 30 --skip_existing \
+    --manifest /data/db/crypto/futures/world/world_pool/${fa_lower}/manifest.json
 ```
 
-Manifest 文件记录每个 (date, symbol) 的完成状态，配合 `--skip_existing` 实现高效续跑。
+注意：合并 manifest 在每次运行结束时从子分片 manifest 重新生成，所以多次运行后的合并 manifest 只包含**最后一次运行**各分片的 entries。如果你需要完整历史，用 `find <output_dir> -name '*.parquet'` 直接枚举文件。
+
+### 3.5 并行 launcher 内存 OOM
+
+**现象**：多个分片同时跑，整机内存爆掉。
+
+**原因**：30 个子进程同时加载 trade + L2，单进程内存 × 30。
+
+**解决**：
+1. 降低 `--workers`（例如 15 或 10）。
+2. 降低 `--chunk-days`（例如 7），让每个子进程内部 chunk 更小。
+3. 只跑部分 symbols：分多批运行。
