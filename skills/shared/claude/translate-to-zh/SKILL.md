@@ -1,6 +1,6 @@
 ---
 name: translate-to-zh
-description: "将英文 Markdown 文档翻译为中文。参数可为单个 .md 文件路径（翻译后写入 doc_zh.md）或目录路径（在同级生成 <dir>_zh 目录，保留原目录结构，翻译其中所有 .md 文件）。学术名词、专有名词、代码、公式、命令保持英文原文不变，其余内容翻译为中文。翻译工作通过 Sonnet subagent 执行。"
+description: "将英文 Markdown 文档翻译为中文。参数可为单个 .md 文件路径（翻译后写入 doc_zh.md）或目录路径（在同级生成 <dir>_zh 目录，保留原目录结构，翻译其中所有 .md 文件）。对 ob-research 项目目录（hft 或 crypto）做特殊处理：在项目目录下新建 report_zh/ 子目录，翻译其中的顶层 .md 文件。学术名词、专有名词、代码、公式、命令保持英文原文不变，其余内容翻译为中文。翻译工作通过 Sonnet subagent 执行。"
 ---
 
 # Translate to Chinese — 英译中翻译
@@ -18,7 +18,10 @@ description: "将英文 Markdown 文档翻译为中文。参数可为单个 .md 
 ## 输出规则
 
 - **文件**：`/a/b/doc.md` → `/a/b/doc_zh.md`（同目录下新增 `_zh` 后缀文件）。
-- **目录**：`/a/b/translate` → `/a/b/translate_zh`（新建同级目录，保留子目录结构，逐个翻译其中所有 `.md` 文件；非 md 文件不复制、不翻译）。
+- **ob-research 项目目录**（特殊情形）：若目录路径匹配 `.../ob_research/<project>/` 或 `.../crypto_ob_research/<project>/`，则目标目录为该项目目录下的 `report_zh/`（**而非同级的 `<project>_zh`**），并且**只翻译项目顶层的 `.md` 文件**（不递归进入 `code/` 等子目录）。例：
+  - `/home/cken/hft_projects/HFTPool/ob_research/86-price_neutral_churn_rate/` → 顶层 md 译文写入 `/home/cken/hft_projects/HFTPool/ob_research/86-price_neutral_churn_rate/report_zh/`。
+  - `/home/cken/crypto_world/crypto_ob_research/1-depth_fair_price/` → 顶层 md 译文写入 `/home/cken/crypto_world/crypto_ob_research/1-depth_fair_price/report_zh/`。
+- **普通目录**：`/a/b/translate` → `/a/b/translate_zh`（新建同级目录，保留子目录结构，逐个翻译其中所有 `.md` 文件；非 md 文件不复制、不翻译）。
 - **原文件/原目录保持不变**。
 - 若目标文件已存在，直接覆盖。
 
@@ -39,9 +42,9 @@ description: "将英文 Markdown 文档翻译为中文。参数可为单个 .md 
 1. 判断 `<path>` 是文件还是目录（用 `Bash` 的 `test -f` / `test -d`，或 `Glob`）。
 2. 规范化为绝对路径。
 3. 若是目录：
-   - 计算目标目录 `<path>_zh`。
-   - 用 `Glob` 列出 `<path>/**/*.md`，建立 `(src, dst)` 映射列表。
-   - 用 `Bash` 预创建目标目录及所有子目录（`mkdir -p`）。
+   - **先判断是否为 ob-research 项目目录**：路径匹配正则 `.*/(crypto_)?ob_research/[^/]+/?$`（即 `ob_research/` 或 `crypto_ob_research/` 下的单个项目目录）。
+     - **是**：目标目录设为 `<path>/report_zh/`；用 `Glob` 列出 `<path>/*.md`（**仅顶层**，不递归），建立 `(src, dst)` 映射（dst 保持原文件名，写入 `report_zh/` 内）。若顶层已有 `report_zh/` 目录中的 md 文件被 glob 命中，需显式过滤掉以免自指。`mkdir -p <path>/report_zh`。
+     - **否**：普通目录模式。目标目录 `<path>_zh`；用 `Glob` 列出 `<path>/**/*.md`，建立 `(src, dst)` 映射列表，保留子目录结构；`mkdir -p` 预创建所有子目录。
 4. 若是文件：
    - 校验后缀为 `.md`，否则报错退出。
    - 目标为同目录下的 `<stem>_zh.md`。
@@ -96,7 +99,7 @@ Agent 调用示例参数：
 
 subagent 返回后，主 agent 向用户汇报：
 - 翻译了多少个文件；
-- 输出路径（文件情形给出 `_zh.md` 路径，目录情形给出 `_zh` 目录路径）；
+- 输出路径（文件情形给出 `_zh.md` 路径；ob-research 项目目录情形给出 `<path>/report_zh/`；普通目录情形给出 `<path>_zh/`）；
 - 任何失败项。
 
 不要让主 agent 自己翻译文件内容，避免占用主上下文。
@@ -107,3 +110,4 @@ subagent 返回后，主 agent 向用户汇报：
 - 大文件（>50KB）也由 subagent 一次性读取并整篇翻译；若单个文件过大超出 subagent 上下文，可在 prompt 中指示 subagent 分段 Read/Write 同一目标文件（追加模式），但默认先尝试一次性翻译。
 - 若 `<path>_zh` 目录已存在，直接写入（可能覆盖已有译文），不要删除原有内容。
 - 非 `.md` 文件一律忽略，不复制到 `_zh` 目录。
+- **ob-research 情形**：仅翻译项目顶层 md 文件（`research_report.md`、`research_log.md`、`factor_definition.md`、`quality_review.md` 等），不进入 `code/` 子目录；译文按原文件名写入 `<path>/report_zh/` 内。若 `report_zh/` 已存在旧译文，直接覆盖。
