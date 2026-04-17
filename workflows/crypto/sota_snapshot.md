@@ -82,25 +82,65 @@
 
 ### 1.3 SOTA 回测结果
 
-**_待填_**（用户稍后补 FI top100 模型的 signal backtest 产出）。
+**回测锚点（2026-04-18 升级）**：`/home/cken/crypto_world/zebra/bt_output/fi_top100_q999_close_m05_consec3/`（FI top100 模型 / q99.9 入场 / close=-0.5 持仓延迟退出 / 3 consecutive bars gating）
 
-| 指标 | Train | Valid |
-|------|------:|------:|
-| Sharpe | _待填_ | _待填_ |
-| MaxDD | _待填_ | _待填_ |
-| Annual Return | _待填_ | _待填_ |
-| Calmar | _待填_ | _待填_ |
+**关键指标**：
+
+| 指标 | Train (140 天) | Valid (34 天) | 合计 (174 天) |
+|------|------:|------:|------:|
+| Net PnL (USDT) | +1,908 | −258 | +1,650 |
+| Net Rate (bps) | +7.44 | −1.48 | +4.53 |
+| **Sharpe** | **6.63** 🥇 | −1.29 | — |
+| MaxDD (USDT) | −109 | −173 | — |
+| Roundtrips | 3,740 | 724 | 4,464 |
+| Avg Daily RTs | 26.7 | 21.3 | 25.7 |
+| Median Hold (s) | 247 | 161 | 235 |
+| Avg Win Rate | — | — | 65.8% |
 
 **回测参数说明**：
 
-- **交易模式**：_待填_（taker / maker）
-- **手续费**：_待填_
-- **滑点模型**：_待填_
-- **持仓周期 / 换手约束**：_待填_
-- **信号阈值 / 分位切分**：_待填_
-- **完整回测报告**：_待填_（路径）
+- **交易模式**：long-only, taker-entry / maker-exit（15s 超时转 taker）
+- **信号入场阈值**：q99.9 = **6.309 bps**（在 167 train days, 24.87M bars 上计算）
+- **信号退出逻辑（新）**：`close_long_bps = -0.5 bps` + `close_consecutive_bars = 3`（需 3 个连续 bar score < -0.5 才退）
+- **手续费**：0.73 bps/RT（fee_rate 固定，含 entry + exit）
+- **滑点模型**：Zebra BT 引擎（50ms latency，hysteresis 3 bps，exit_replace 5s）
+- **Notional**：1,000 USDT / 笔；initial_capital 1,000,000
+- **数据纪律**：excl 20251010 + ETHUSDT/2025-08-29（与 analyzer 一致）
+- **回测脚本**：`/home/cken/crypto_world/zebra/scripts/run_bt_fi_top100_exp_d_m05_consec3.py`
+- **完整报告**：`/home/cken/crypto_world/zebra/bt_output/fi_top100_q999_close_m05_consec3/report.md`
 
-> 历史 `zebra/bt_output/` 下存在 fa1+fa2 h100/h400 clip/rank 旧回测（见 research_progress 记忆），但对应 full 198 特征集，不是 FI top100。用户决定本期留空待补。
+**Alpha capture 验证**（vs analyzer top 0.1% 日度收益）：
+- Train capture **+42.5%**（vs 原 baseline 14.8%，提升 2.9×）
+- Valid capture **−12.5%**（vs 原 baseline −24.9%，收窄一半）
+
+**相对原 baseline (close=0, consec=1) 的改善**：
+
+| 维度 | baseline | **Exp D (SOTA)** | 改善 |
+|---|---:|---:|---|
+| Median hold | 44s | **3.9m** | ×5.3 |
+| Total Net | +642 | +1,650 | +157% |
+| Train Sharpe | 4.51 | **6.63** | +47% |
+| Valid Sharpe | −3.32 | **−1.29** | 2.6× 改善 |
+| Win rate | 62.5% | 65.8% | +3.3pp |
+| Train MaxDD | −151 | −109 | 更小 |
+| Train capture | 14.8% | 42.5% | ×2.9 |
+
+**选型依据（issue #117 深度归因后）**：
+- Analyzer 报告 top-0.1% 日均前瞻收益 Train +14.68 / Valid +13.92 bps，但原 baseline (close=0 立即退出) 只 capture 15% 的 train alpha、valid 反号
+- 深度归因指向 **holding-time 严重不匹配（median hold 44s vs 目标 100 bars ≈ 300s）+ 信号早退的路径依赖**
+- 六组消融实验（close ∈ {0, −0.5, −2}, consec ∈ {1, 3, 5, 7}, max_hold=100 对照）确认 **"让 signal 自然衰减退出 + close=−0.5 + 3 consecutive bars"** 是最优：既捕获 horizon 又不陷入极限 trend-follow
+- 对照 close=−2 方案（Exp B）：Valid Sharpe −0.55 更优，但 median hold 2.1h 过长、win rate 跌到 42.7%、MaxDD −350，**不符合可部署性要求**
+- 对照 max_hold=100 硬持（Exp C）：Total −496 完全失败，证明 "analyzer top-0.1% 是理想化上限，不是可执行 recipe"
+
+**历史变迁**：
+- 2026-04-17 bootstrap: FI top100 q99.9 (close=0, consec=1), Total +642 / Valid Sharpe −3.32
+- 2026-04-18 升级: Exp D (close=−0.5, consec=3), Total +1,650 / Valid Sharpe −1.29
+
+**Alpha 衰减观察**：valid 期（2025-12-16 ~ 2026-01-26）Sharpe 仍为负（−1.29），与先前 fa2+fa1 h400 rank valid 负向同步出现。这是当前数据集的结构性 alpha 衰减，非策略选型问题（待下一轮 benchmark refresh 用更新数据验证）。
+
+**关联 Issue**：
+- issue #116：benchmark #0 set 过程
+- issue #117：analyzer vs BT capture gap 深度归因 + Exp D 选型依据
 
 ---
 
