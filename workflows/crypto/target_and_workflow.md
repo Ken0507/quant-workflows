@@ -39,8 +39,8 @@
 |------|------|---------|---------|
 | 逐笔成交 (trades) | `/data/db/crypto/futures/binance_histroy/raw/trades/{SYM}/` | 7 币种, 2019 ~ 2026-03 | Binance 原始 trade：price / qty / side / ts_ms |
 | L2 订单簿 (Tardis) | `/data/db/crypto/futures/tardis/binance-futures/incremental_book_L2/{SYM}/` | 7 币种, 2025-07-01 ~ 2026-02-10 (225 天) | 增量 + 定期全量快照，可重建任一时刻 L2 |
-| AmountBar 阈值 | `/data/db/crypto/futures/world/bod_data/daily_thres_28800/{SYM}/` | 7 币种, 2020 ~ 2026-01 | 动态每日阈值，目标 ~28800 bar/day |
-| basic_table 底表 | `/data/db/crypto/futures/world/world_pool/basic_table/` | 7 币种, 2025-07-01 ~ 2026-01-27 (211 天) | bar 级 OHLCV + quote (mid, spread_bps) + last_trade_side，由 zebra framework 规范化产出。作为所有 factor pool 的 alignment 锚点。上限受 `daily_thres_28800` threshold 数据终止于 2026-01-27 限制（L2 本身覆盖到 2026-02-10，补 threshold 后可延伸）。ETHUSDT 2025-08-29 因 L2 乱序单独缺失。详见 issue #121 |
+| AmountBar 阈值 | `/data/db/crypto/futures/world/bod_data/daily_thres_28800/{SYM}/` | 7 币种, 2020 ~ 2026-02-10 | 动态每日阈值，目标 ~28800 bar/day |
+| basic_table 底表 | `/data/db/crypto/futures/world/world_pool/basic_table/` | 7 币种, 2025-07-01 ~ 2026-02-10 (225 天, ETH 224 天：2025-08-29 L2 乱序缺失) | bar 级 OHLCV + quote (mid, spread_bps) + last_trade_side，由 zebra framework 规范化产出。作为所有 factor pool 的 alignment 锚点。详见 issue #121 |
 
 **支持的币种**：BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT（7 个 U 本位永续合约）
 
