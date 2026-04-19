@@ -1,5 +1,7 @@
 # Crypto 投研：目标与研究流程
 
+> **重大变更 2026-04-19**：label 基准从 close-to-close 切换到 mid-to-mid；底表 basic_table 上线作为 factor alignment 锚点。详见 issue #119 / #121。
+
 > **用途**：本文件是整个 crypto 投研工作的"北极星"文档。供所有 agent 在接手任务前快速理解：我们要去哪里（目标）+ 我们怎么走（流程）。
 >
 > **维护节奏**：慢变。仅在投研目标或流程发生结构性调整时由用户手工更新。**agent 不得自行修改本文件**，只能在 meta-review 结束时提出 diff 建议，由用户审阅后落盘。
@@ -24,6 +26,13 @@
 
 ⚠️ 不要只盯线性 IC 筛因子。非线性预测性同样是合法的价值来源，在 Phase 2/3 的筛选中要主动考察分位形状、条件 IC、与已有 baseline 的 LGBM 联合表现。
 
+#### 1.2.1 Label basis（mid-label 主口径）
+
+- **主预测口径**：`ret_lag0_next100 ~ ret_lag0_next200`（列名不变，对外接口保持稳定）
+- **底层计算**：`mid[t+h] / mid[t] - 1`，其中 `mid` 来自 basic_table 的 bar-level L1 midpoint（见 §1.3 新增行）
+- **废弃口径**：之前的 close-to-close 口径已废弃。相关入口触发 `NotImplementedError`，不再允许走 close 路径
+- **依据**：issue #119（2026-04-19）
+
 ### 1.3 可用数据简介
 
 | 数据 | 路径 | 覆盖范围 | 字段要点 |
@@ -31,6 +40,7 @@
 | 逐笔成交 (trades) | `/data/db/crypto/futures/binance_histroy/raw/trades/{SYM}/` | 7 币种, 2019 ~ 2026-03 | Binance 原始 trade：price / qty / side / ts_ms |
 | L2 订单簿 (Tardis) | `/data/db/crypto/futures/tardis/binance-futures/incremental_book_L2/{SYM}/` | 7 币种, 2025-07-01 ~ 2026-02-10 (225 天) | 增量 + 定期全量快照，可重建任一时刻 L2 |
 | AmountBar 阈值 | `/data/db/crypto/futures/world/bod_data/daily_thres_28800/{SYM}/` | 7 币种, 2020 ~ 2026-01 | 动态每日阈值，目标 ~28800 bar/day |
+| basic_table 底表 | `/data/db/crypto/futures/world/world_pool/basic_table/` | 7 币种, 2025-07-01 ~ 2026-02-10 | bar 级 OHLCV + quote (mid, spread_bps) + last_trade_side，由 zebra framework 规范化产出。作为所有 factor pool 的 alignment 锚点。详见 issue #121 |
 
 **支持的币种**：BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT（7 个 U 本位永续合约）
 
@@ -64,6 +74,8 @@ AggTrans / L2 event
         ▼
   AmountBar 级因子列（(symbol, bar_id, close_time_ms) join key）
         │
+        │  同时从 basic_table join 得到 mid + spread_bps 列，
+        │  供 mid-label 计算 + 实时 spread 扣费
         ▼
   与 baseline (f001+f002+已落地 FA) 在 join key 上 merge
         │
@@ -95,6 +107,7 @@ AggTrans / L2 event
 - **线性 + 非线性预测性都要**：Phase 2/3 筛选不得只用线性 IC 做唯一 gate，必须同时考察非线性预测力（分位形状、conditional IC、LGBM 联合表现）
 - **数据纪律红线**：研究阶段仅使用研究集 A (2025-07-01 ~ 2025-09-30) + 研究集 B (2026-01-10 ~ 2026-01-20)，其余为禁区（含 realize 阶段训练/验证集）
 - **失败因子也要记录**：失败因子的记录与成功因子同等重要，构成知识沉淀
+- **mid-label 主口径**：所有 forward return 基于 mid-to-mid（`mid[t+h]/mid[t]-1`），不用 close。net return 扣费用 bar 级实时 spread，不用 per-symbol 常数。依据：issue #119，2026-04-19
 
 ### 1.7 每轮调查的记录格式
 
@@ -191,7 +204,7 @@ AggTrans / L2 event
 │  工作区: zebra_pool/fa{N}/                                            │
 │  子 Skill 调用:                                                       │
 │    crypto-zebra-factor-write      — C++ Agent 实现 + smoke test      │
-│    crypto-axis-alignment-check    — Join key 与 f001 对齐验证          │
+│    crypto-axis-alignment-check    — Join key 与 basic_table 对齐验证   │
 │    crypto-zebra-factor-batch-run  — 批量刷数据                         │
 │    crypto-analyzer-standard-report — LGBM 分析报告（单 FA）           │
 │                                                                      │
