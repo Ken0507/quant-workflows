@@ -8,21 +8,37 @@ metadata:
 
 # Crypto 因子分析报告
 
+> **Breaking changes (2026-04-19, issue #119)**
+>
+> - **Label 口径切换为 mid-to-mid**：forward return 由 basic_table 的 `mid` 列计算，close-to-close 路径已被 analyzer 硬下线（`label_builder` 对 close 直接 raise NotImplementedError）。
+> - **Spread 改为逐 bar 实时值**：不再使用硬编码 per-symbol spread 常数（历史遗留的 BTCUSDT / ETHUSDT 等常数已从 analyzer 删除），改为读取 `basic_table.spread_bps` 列（full spread, ask - bid，非 half）。净收益公式：`net = fwd_mid_ret - spread_bps - fee`。
+> - **`--label-basis` 参数已下线**：analyzer CLI 不再接受该参数；如旧脚本/文档仍带有，请删除。
+> - **basic_table 成为新 anchor**：analyzer 加载因子时会 inner join basic_table，缺失即 load 失败。f001 不再是对齐基准。
+> - **L2 覆盖上限 2026-02-10**：Tardis 数据到此截止，analyzer 日期范围硬上限为该日。
+>
+> 更完整的背景见 issue #119 / #121（basic_table 实现方案）。
+
 ## 0. 前置条件
 
 1. **因子数据已刷完**
    - 输出目录 `/data/db/crypto/futures/world/world_pool/${fa_lower}/` 下每天每 symbol 的 parquet 齐全。
    - 已通过 `crypto-zebra-factor-batch-run` 的输出验证。
 
-2. **Python 环境**
+2. **basic_table 已刷完（新增，强依赖）**
+   - 路径：`/data/db/crypto/futures/world/world_pool/basic_table/{date}/basic_table/{sym}.parquet`
+   - 每个分析日期 + 每个 symbol 必须齐全，analyzer 会 inner join 该表取 `mid` / `spread_bps` / `last_trade_side` 等列。缺失任意一天或一个 symbol 直接 load 失败。
+   - basic_table 的 `spread_bps` 是 full spread（ask - bid），非 half。
+
+3. **Python 环境**
    - 工作目录：`/home/cken/crypto_world/research/analyzer`
    - 依赖：pandas, pyarrow, lightgbm, matplotlib, numpy（已预装）。
 
-3. **日期范围**
+4. **日期范围**
    - 默认：`2025-07-01` ~ `2026-01-26`（210 天）
+   - 硬上限：`2026-02-10`（L2 数据截止日，详见 breaking changes）
    - Train/Valid 自动 80/20 切分
 
-4. **数据纪律：20251010 必须剔除**
+5. **数据纪律：20251010 必须剔除**
    - 2025-10-10 存在极端行情，会严重污染 LGBM 训练。
    - `run_lgbm_only.py` 的 `--exclude-dates 20251010` 参数已实现此功能。
 
@@ -36,6 +52,8 @@ metadata:
 |------|-----------|------|
 | **clip** | `--label-mode clip --clip-threshold 0.01 --exclude-dates 20251010` | 删除极端 label + 剔除 10/10 |
 | **rank** | `--label-mode rank --exclude-dates 20251010` | Rank transform per (sym,day) + 剔除 10/10 |
+
+Label 口径：**mid-to-mid forward return**，mid 来自 basic_table 提供的 `mid` 列；净收益在扣费时使用 basic_table 提供的 realtime per-bar spread (`spread_bps`)，不再用硬编码 per-symbol 常数。
 
 ### 1.1 命令
 
@@ -159,6 +177,7 @@ python run_merged_report.py \
 1. 先合并 f001 + f002（baseline 69 因子），按 `(bar_id, close_time_ms)` inner join。
 2. 再将新因子集的独有列 fold 到合并结果上。
 3. `f_ret_1` 等共享列只保留一份。
+4. 所有合并结果最后 inner join `basic_table`（mid / spread_bps），label 与净收益基于 mid + realtime spread（issue #119 之后的统一口径）。
 
 ---
 
@@ -183,3 +202,5 @@ python run_merged_report.py \
 1. **不要跳过 `--exclude-dates 20251010`** — 该日极端行情会严重污染训练
 2. 不要修改因子数据或 analyzer 源码中的默认参数
 3. 报告输出目录使用 `/data/db/crypto/analyzer/${fa_lower}/` 下的子目录，不要放到其他位置
+4. **不要再传 `--label-basis`**（issue #119 之后已下线），也不要尝试走 close-to-close 路径 — analyzer 会 raise NotImplementedError
+5. **不要在代码里硬编码 per-symbol spread 常数**（BTCUSDT / ETHUSDT 等旧常数已从 analyzer 删除），统一读取 `basic_table.spread_bps`
