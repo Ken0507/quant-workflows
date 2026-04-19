@@ -139,6 +139,7 @@ OUT_DIR="/home/cken/crypto_world/factor_agent_docs"
 - 因子总数：X 个（Y 组）
 - 因子分组总表（编号 / 名称 / 组 / 类型标记 / 来源研究）
 - 主预测口径：ret_lag0_next100 ~ next200（AmountBar 时间轴）
+  - **Label basis = mid-to-mid**（issue #119 之后）：`ret_lag0_nextH` 底层由 `basic_table.mid` 计算（`mid[t+H]/mid[t]-1`），列名不变但语义已切换，不再是 close-to-close
 - 与 baseline（f001+f002, 69 因子）的关系（增量/正交性/已知冗余）
 
 ## §1 数据依赖简述
@@ -180,7 +181,7 @@ OUT_DIR="/home/cken/crypto_world/factor_agent_docs"
 - **状态管理**：state 变量，初始值，bar-reset
 - **输出范围**：[min, max] + 边界行为（除零->?，样本不足->?）
 - **边界条件**：首bar/低活跃期处理
-- **类型标记**：A/B/AB/R + IC 摘要
+- **类型标记**：A/B/AB/R + IC 摘要（IC 针对 mid-to-mid label，issue #119 之后口径）
 - **已知限制**：流动性条件、时段效应、与 baseline 冗余度
 
 ## §4 采样口径与框架要求
@@ -343,3 +344,11 @@ OUT_DIR="/home/cken/crypto_world/factor_agent_docs"
 | factor_list | `factor_agent_docs/FA{N}_factor_list.md` | 标准化因子定义文档（含所有有定义的因子） |
 | review | `factor_agent_docs/FA{N}_review.md` | 审阅意见 |
 | warning_factors | `factor_agent_docs/FA{N}_warning_factors.md` | 警告因子报告（仅当存在 warning session 时生成） |
+
+---
+
+## 5. Changes after issue #119 (2026-04-19)
+
+- **七要素模板"预测口径"语义**：`ret_lag0_nextH` 列名保留，但底层 label basis 已切换为 mid-to-mid（`basic_table.mid`）。compile 时在 §0 概述处明确标注"Label basis = mid-to-mid"，防止下游读者误解为 close-to-close。
+- **因子 IC 摘要口径**：§3 各因子的"类型标记 + IC 摘要"指 mid-based label 下的 IC；如源研究报告含历史 close-based IC，compile 时应注明对应数据取自切换前还是切换后。
+- **Reviewer 审阅维度**：独立审阅 Agent 在"口径一致性检查"中应确认 IC 数值与所声明的 label basis（mid-to-mid）匹配。

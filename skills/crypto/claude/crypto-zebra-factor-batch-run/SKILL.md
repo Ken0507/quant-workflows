@@ -215,6 +215,22 @@ print(f"Uniform schema: {len(schemas[0])} columns")
 
 列名必须以 `${fa_prefix}_` 开头（除 `symbol`, `bar_id`, `close_time_ms` 外）。
 
+### 2.4 轴对齐验证（与 basic_table anchor 对齐）
+
+factor parquet 产出后，必须通过 `axis_alignment_check.py` 验证与 **`basic_table` anchor** 的对齐（issue #119 之后 factor pool 对齐基准从 f001 切换为 basic_table）：
+
+```bash
+python /home/cken/crypto_world/zebra/scripts/axis_alignment_check.py \
+    --factor-root /data/db/crypto/futures/world/world_pool/${fa_lower} \
+    --factor-sub ${fa_lower}_v1 \
+    --anchor-root /data/db/crypto/futures/world/world_pool/basic_table \
+    --anchor-sub basic_table \
+    --dates <3-5 日的逗号分隔列表> \
+    --symbols BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,ADAUSDT
+```
+
+通过标准：`join_ratio >= 99.9%`、`bar_coverage >= 99.9%`、`dup_cnt == 0`。详见 `crypto-axis-alignment-check` skill。
+
 ---
 
 ## 3. 常见问题处理
@@ -278,3 +294,11 @@ python .../parallel_batch_runner.py ... --workers 30 --skip_existing \
 1. 降低 `--workers`（例如 15 或 10）。
 2. 降低 `--chunk-days`（例如 7），让每个子进程内部 chunk 更小。
 3. 只跑部分 symbols：分多批运行。
+
+---
+
+## 4. Changes after issue #119 (2026-04-19)
+
+- **对齐基准从 f001 切换为 basic_table**：factor parquet 产出后的轴对齐验证使用 `axis_alignment_check.py --anchor-root /data/db/crypto/futures/world/world_pool/basic_table --anchor-sub basic_table`，不再以 `f001` 为对齐基准。
+- **`--anchor-root` / `--anchor-sub` 为新主参数**：原 `--f001-root` / `--f001-sub` 仅为向下兼容保留（会发 DeprecationWarning），新任务一律使用 `--anchor-root`。
+- **basic_table 前置依赖**：执行刷因子本身不依赖 basic_table，但刷完后的 §2.4 轴对齐验证需要 `basic_table` 已覆盖相同日期 × symbol。如果 basic_table 尚未刷全，应先补 basic_table 再做对齐检查。

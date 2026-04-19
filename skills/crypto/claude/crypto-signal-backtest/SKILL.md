@@ -156,6 +156,13 @@ zebra/bt_output/<bt_name>/
 - Train/Valid 切分：从 `lgbm_train_info.json` 读取，不硬编码
 - 7 symbols：BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT
 
+## 口径一致性（issue #119 之后）
+
+- **Benchmark / fill basis**：与 analyzer 保持一致——**mid-based**。PnL 的参照价是 `basic_table.mid`，与训练时用的 mid-to-mid label 口径匹配。
+- **Spread 扣费**：使用 `basic_table.spread_bps` 的 per-bar realtime spread（full spread = ask - bid），不再使用历史硬编码 per-symbol spread 常数。maker/taker 成本模型在此基础上叠加 fee。
+- **basic_table 依赖**：回测运行同样需要 `/data/db/crypto/futures/world/world_pool/basic_table/{date}/basic_table/{sym}.parquet` 覆盖回测日期 × 7 symbols，缺失会导致 fill / 结算价失败。
+- **不再需要 `--label-basis` 类参数**（analyzer / signal export 上游已下线），回测脚本继承默认 mid 口径即可。
+
 ## 关键代码路径
 
 | 文件 | 用途 |
@@ -173,3 +180,10 @@ zebra/bt_output/<bt_name>/
 2. 不要修改因子数据或交易数据
 3. 不要在回测脚本中硬编码日期——从 analyzer 报告中读取
 4. 不要跳过 Phase 5 的分析报告直接汇报——必须先生成完整报告
+
+## Changes after issue #119 (2026-04-19)
+
+- **Benchmark / fill basis 切换为 mid**（`basic_table.mid`），与 analyzer 训练时的 mid-to-mid label 一致。原 close-based 回测路径已下线。
+- **Spread 扣费切换为 per-bar realtime**（`basic_table.spread_bps`），替代历史硬编码 per-symbol spread 常数。净收益公式与 analyzer 对齐：`net = fwd_mid_ret - spread_bps - fee`。
+- **basic_table 强依赖**：回测日期 × 7 symbols 的 `basic_table` 必须齐全，缺失即报错。运行前可用 `ls /data/db/crypto/futures/world/world_pool/basic_table/<date>/basic_table/` 快速验证。
+- **`--label-basis` 之类的参数已由上游 analyzer 下线**，信号/回测脚本不再需要该参数。

@@ -194,14 +194,14 @@ scl enable gcc-toolset-12 'cmake .. && make -j8'
 
 ### 2.6 轴对齐检查（QR 执行，使用 Skill `crypto-axis-alignment-check`）
 
-刷 3-5 天全 symbol 后，验证新因子输出与 f001 的 bar grid 严格对齐：
+刷 3-5 天全 symbol 后，验证新因子输出与 `basic_table` anchor 的 bar grid 严格对齐（issue #119 之后 anchor 已从 f001 切换为 basic_table）：
 
 ```bash
 python /home/cken/crypto_world/zebra/scripts/axis_alignment_check.py \
     --factor-root ${WORKSPACE}/code/output/dev/smoke_test \
     --factor-sub ${fa_lower}_v1 \
-    --f001-root /data/db/crypto/futures/world/world_pool/f001 \
-    --f001-sub base30_v1 \
+    --anchor-root /data/db/crypto/futures/world/world_pool/basic_table \
+    --anchor-sub basic_table \
     --dates 2026-01-15,2026-01-16,2026-01-17 \
     --symbols BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT,ADAUSDT
 ```
@@ -241,7 +241,7 @@ python /home/cken/crypto_world/zebra/scripts/axis_alignment_check.py \
 - `close_time_ms` = UTC epoch millisecond
 - `(symbol, bar_id, close_time_ms)` join key 完整性
 - AmountBar 采样口径：OnBarClose() 每 bar 恰好一行
-- 与 f001 join ratio >= 99.9%
+- 与 `basic_table` anchor join ratio >= 99.9%（issue #119 之后 anchor 从 f001 迁到 basic_table）
 - 跨日状态连续性（chunk 模式下 EMA 不在日界重置）
 
 **E) 单元测试**：覆盖 OB 缺失（HasBook=false）、零成交量、极端 spread、首 bar 冷启动、amount overshoot。
@@ -273,6 +273,9 @@ python /home/cken/crypto_world/zebra/scripts/axis_alignment_check.py \
 - 输出：`$ANALYZER_OUT`
 - Train/Valid 分割：按时间顺序 80/20（~2025-07-01~2025-12-14 train / ~2025-12-15~2026-02-09 valid）
 - 报告包含：IC/ICIR、因子分布、相关性矩阵、LightGBM 重要性
+- **Label 口径（issue #119 后默认且唯一）**：mid-to-mid forward return（mid 来自 `basic_table.mid`），close-to-close 路径已硬下线
+- **扣费口径**：净收益使用 `basic_table.spread_bps` 的 per-bar realtime spread（full spread, ask - bid）+ fee，不再使用硬编码 per-symbol spread 常数
+- **anchor 依赖**：analyzer 会 inner join `basic_table`，所有分析日期 × symbol 的 basic_table 必须齐全
 
 ### 4.3 报告 #2：新因子集 + baseline 合并（QR 执行）
 
@@ -346,3 +349,12 @@ ln -sfn "$ANALYZER_MERGED" "${DELIVERY}/report/analyzer_merged_baseline69"
 - **审查独立性**：Code Reviewer / Performance Reviewer / Task Compliance Monitor 不参与实现，只产出意见
 - **禁止中途对话**：问题写入 `${WORKSPACE}/issue.md`
 - **持续对照本文件**：每个 Step 完成后重读本 Skill 核对
+
+---
+
+## 8. Changes after issue #119 (2026-04-19)
+
+- **Step 2.6 轴对齐**：anchor 从 `f001` 切换为 `basic_table`，脚本参数改为 `--anchor-root` / `--anchor-sub`（默认指向 `basic_table`）。原 `--f001-root` / `--f001-sub` 仅为兼容旧流水线保留，调用会发 DeprecationWarning。
+- **Step 2 强验证 D 项口径一致性**：与 anchor 的 join ratio 目标从"与 f001"改为"与 basic_table"。
+- **Step 3 Analyzer 报告**：默认（且唯一）label 口径是 mid-to-mid（basic_table.mid），close-to-close 路径已硬下线；扣费使用 basic_table 提供的 per-bar realtime spread，不再用硬编码 per-symbol 常数。
+- **basic_table 强依赖**：analyzer 阶段所有日期 × symbol 的 `basic_table` 必须齐全，缺失即 load 失败。在进入 Step 3 之前 QR 应自行检查 basic_table 覆盖度。
