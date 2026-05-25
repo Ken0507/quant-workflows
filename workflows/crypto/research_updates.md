@@ -137,6 +137,171 @@ skill 在 Step 4 询问用户时，应列出候选报告让用户勾选保留哪
 
 <!-- meta-review skill 在此行下方追加新条目，保持最新在上 -->
 
+## [2026-05-25] Update #2
+
+**时间区间**：2026-04-17 → 2026-05-25
+**子目录**：[`updates/20260525_update/`](updates/20260525_update/)
+
+> ⚠️ 本期为"高强度 + 长停滞"两段式：04-17 → 04-23 一周内完成 label 大迁移 + benchmark refresh #1 + FA4 落地；04-23 之后约 5 周用户工作切到 HFT/lgj SDK audit，crypto 侧无新增产出。本 Update 主要追认 04-17 → 04-23 一周的高密度工作。
+
+### 1. 本期产出概览（聚合计数）
+
+| 类别 | 新增 | 明细 |
+|------|------|------|
+| research session | 1 | #65 queue_survival_panel（2026-04-18 启动，Phase 1 完成，未到 Phase 2，无 factor_definition.md） |
+| factor list (FA) | 1 | FA4（来源 #42 + #52-64 共 14 项研究，55 因子，7 分组，CONDITIONAL PASS） |
+| realized pool | 1 | fa4（54 因子工程交付；FA list 55 vs realize 54 的 1 个差异来自实施合并/剔除） |
+| analyzer run | 多批 | (a) `fa4/` 4 close-label + 3 mid-label；(b) `campaign122_mid/` 5 pairs h100；(c) `campaign122_mid_h400/` 5 pairs h400；(d) `campaign123_clean_sota/` 12 实验 E1-E12 + ckpt4_clean |
+| benchmark refresh | **是（#1）** | **新 SOTA: `campaign123_clean_sota/E2_mid_sota100/`**（100 维 mid-label fa1+fa2 FI top100，57 fa1 + 43 fa2） |
+| ad-hoc 课题报告 | 9 份（10 文件） | 见 §3 |
+| 相关 issue | 9 个 | 见 §4 |
+
+### 2. SOTA 提升量
+
+**SOTA 模型对比表**（Bootstrap #0 close-label → Refresh #1 mid-label）：
+
+| 指标 | 上期 (Bootstrap #0) | 本期 (Refresh #1 = E2 mid_sota100) | 变化 |
+|------|--------:|--------:|--------|
+| Label 口径 | close-to-close | **mid-to-mid (basic_table anchor)** | 切换（issue #119/#121） |
+| 模型路径 | `fa3_tuning_stage1/fi_top100_mdil100k/` | `campaign123_clean_sota/E2_mid_sota100/clip/` | — |
+| 因子集 | fa1 59 + fa2 41 | **fa1 57 + fa2 43**（同 100 维） | 2 个 fa1↔fa2 互换 |
+| Train RankIC | 0.0635 | 0.0705 | +0.0070 |
+| **Valid RankIC** | 0.0427 | **0.0579** | **+0.0152 (+36%)** |
+| Gap RankIC | 0.0208 | 0.0126 | −0.0082（缩小 39%） |
+| RICIR (Valid) | _未补_ | 2.68 | — |
+| **Valid Top0.1% net (bps)** | 不可直接对比（close-bias） | **8.82** | campaign #123 12 实验最高 |
+| Valid RankIC pos% | _未补_ | 100% | — |
+| 已落地因子总数 (factor pool) | 381 | **436** | +55 fa4 |
+| BT Total Net (Exp D 同 recipe) | +1,650 USDT | **+1,830 USDT** | +11% |
+| BT Train Sharpe | 6.63 | **7.93** | +20% |
+| **BT Valid Sharpe** | **−1.29** | **+0.16** | **由负翻正** |
+
+**关键洞察**（Refresh #1 的两个本质改变）：
+
+1. **mid-label 修复了 close-bias 导致的 Valid alpha 衰减**：Phase 7 归因证明 Valid 期 close-basis "+7.61 bps Top0.1% alpha" 几乎 100% 是 close→mid reference bias。切到 mid-label 后 Valid Sharpe 从 −1.29 翻正到 +0.16，证实"先前 valid 期 alpha 衰减"主要不是结构问题。
+2. **fa4 落地但不进入 SOTA 模型**：campaign #123 E4 (fa124_full) Valid Top0.1% **6.99 < E2 8.82**；E8/E9 (fa4 IC-selected) 微弱正但 price path 不稳；ckpt4_clean (E2+54 fa4) Valid Top0.1% 跌到 7.66。**fa4 与 fa3 同列入 factor pool 但不入默认 SOTA 模型**。
+
+**SOTA 模型锚点**：
+- 模型目录：`/data/db/crypto/analyzer/campaign123_clean_sota/E2_mid_sota100/clip/`
+- 模型文件：`lgbm_model.txt`
+- Whitelist：`/home/cken/crypto_world/research/ic_fa1234_mid/wl_mid_fi_top100.txt`
+- Top 特征 (gain ratio)：`fa2_confirmed_flow_h20` (8.1%) / `fa1_stale_log_ratio` (6.8%) / `fa2_ofi_regime_z` (6.1%) / `fa1_stale_ema_logmax_50` (5.8%) / `fa2_impact_delta_10_100` (4.3%)
+
+**SOTA 决策依据**：
+- campaign #123 12 个对照 + E2 vs E10 决战：E10 (74 feat) metrics 略优（Valid RankIC +0.0593 / 最小 gap / 最高 RICIR），但 **E2 的 price path 更稳 + Valid Top0.1% net 8.82 vs 7.70**，最终采纳 E2
+- 教训沉淀进项目 memory（`[[feedback_sota_judgement_multi_metric]]`）：**SOTA 判定不能只用 Valid RankIC 单一数字**，须叠加 price path + Top0.1% net bps
+- ckpt4_clean (E2 + 54 fa4) 作为后续验证：Top0.1% 退化、price path 不稳 → 维持 E2 为 SOTA
+
+### 3. 收录的 ad-hoc 课题研究报告
+
+> 本节 9 份课题（10 文件）已完整复制到 `updates/20260525_update/reports/`。
+
+#### 3.1 Phase 7: Latency → PnL Realization 深度研究（FINAL）
+- **原路径**：`/home/cken/crypto_world/research/analyzer_bt_gap/reports/PHASE7_REPORT_FINAL.md`
+- **本地副本**：[`updates/20260525_update/reports/analyzer_bt_gap_PHASE7_REPORT_FINAL.md`](updates/20260525_update/reports/analyzer_bt_gap_PHASE7_REPORT_FINAL.md)
+- **研究方向**：归因 issue #117 中 "Analyzer LGBM Top0.1% 前瞻 +13.92 bps 但 BT Valid 反号" 的 capture gap
+- **核心结论**：Valid 期 close-basis "+7.61 bps alpha" 几乎 100% 是 close→mid reference bias（artifact = close_to_mid_t0 +12.00 − close_to_mid_t100 +0.31 ≈ +11.70 bps）；真实 mid-basis alpha 在 (sym,ds) cluster 下 t=-1.37 p=0.18 不显著。**直接催生 issue #119 label 大迁移**。
+
+#### 3.2 Basic Table Alignment Report
+- **原路径**：`/home/cken/crypto_world/research/spread_distribution/BASIC_TABLE_ALIGNMENT_REPORT.md`
+- **本地副本**：[`updates/20260525_update/reports/spread_distribution_BASIC_TABLE_ALIGNMENT_REPORT.md`](updates/20260525_update/reports/spread_distribution_BASIC_TABLE_ALIGNMENT_REPORT.md)
+- **研究方向**：验证 basic_table 与 fa1/fa2/fa3/fa4 pool 在 7 币种 × 3 日期的 Join 对齐
+- **核心结论**：168 cells 全 PASS，0 FAIL，0 MISSING。basic_table 作为统一 alignment anchor 上线成立（issue #121）。
+
+#### 3.3 BT mid-label 全量回测
+- **原路径**：`/home/cken/crypto_world/research/spread_distribution/BT_MIDLABEL_REPORT.md`
+- **本地副本**：[`updates/20260525_update/reports/spread_distribution_BT_MIDLABEL_REPORT.md`](updates/20260525_update/reports/spread_distribution_BT_MIDLABEL_REPORT.md)
+- **研究方向**：mid-label 模型（155 维 fa4_merged_sota100_midlabel）接入 zebra 回测后的真实 PnL
+- **核心结论**：Valid Rank IC +0.0558（close-SOTA +0.0427，+31%）；IC decay 3× 更慢。证实切 mid-label 后 LGBM 信号质量整体上升。
+
+#### 3.4 Basic Table vs Phase1 差异分析
+- **原路径**：`/home/cken/crypto_world/research/spread_distribution/BASIC_TABLE_VS_PHASE1_DIFF.md`
+- **本地副本**：[`updates/20260525_update/reports/spread_distribution_BASIC_TABLE_VS_PHASE1_DIFF.md`](updates/20260525_update/reports/spread_distribution_BASIC_TABLE_VS_PHASE1_DIFF.md)
+- **研究方向**：basic_table 与 Phase 1 原始 spread 分布的差异定位
+- **核心结论**：辅助证据，支持 §1.3 数据 schema 决策
+
+#### 3.5 Campaign 123 Metrics Matrix
+- **原路径**：`/home/cken/crypto_world/research/ic_fa1234_mid/campaign123_metrics.md`
+- **本地副本**：[`updates/20260525_update/reports/ic_fa1234_mid_campaign123_metrics.md`](updates/20260525_update/reports/ic_fa1234_mid_campaign123_metrics.md)
+- **研究方向**：12 个对照实验（E1-E12）的标准化 metrics 矩阵
+- **核心结论**：见 §2。本期 SOTA 决策的最终矩阵依据。
+
+#### 3.6 Campaign 123 Top-10 Feature Importance per Experiment
+- **原路径**：`/home/cken/crypto_world/research/ic_fa1234_mid/campaign123_fi_top10.md`
+- **本地副本**：[`updates/20260525_update/reports/ic_fa1234_mid_campaign123_fi_top10.md`](updates/20260525_update/reports/ic_fa1234_mid_campaign123_fi_top10.md)
+- **研究方向**：12 实验各自 top-10 LGBM gain 因子对照
+- **核心结论**：`fa2_confirmed_flow_h20` 是所有实验 #1 特征（gain 8-13%）；fa1 stale 系列 + fa2 big/ofi 系列普遍居前
+
+#### 3.7 IC fa1234 mid h100 全量
+- **原路径**：`/home/cken/crypto_world/research/ic_fa1234_mid/ic_fa1234_mid_h100.md`
+- **本地副本**：[`updates/20260525_update/reports/ic_fa1234_mid_ic_fa1234_mid_h100.md`](updates/20260525_update/reports/ic_fa1234_mid_ic_fa1234_mid_h100.md)
+- **研究方向**：mid-label h100 下 fa1+fa2+fa3+fa4 全部因子的单因子 IC
+- **核心结论**：作为 corr filter / IC-selected 子集的数据底座
+
+#### 3.8 Mid corr filter top100 / top200
+- **原路径**：`/home/cken/crypto_world/research/ic_fa1234_mid/corr_filter_mid_top100.md` + `corr_filter_mid_top200.md`
+- **本地副本**：[`updates/20260525_update/reports/ic_fa1234_mid_corr_filter_mid_top100.md`](updates/20260525_update/reports/ic_fa1234_mid_corr_filter_mid_top100.md) + [`corr_filter_mid_top200.md`](updates/20260525_update/reports/ic_fa1234_mid_corr_filter_mid_top200.md)
+- **研究方向**：mid-label 上 |r|<0.7/0.8 相关性过滤
+- **核心结论**：对应 E10 (~74 feat) / E11 (~148 feat)；filter pipeline 留作未来 FA5+ baseline 工具
+
+#### 3.9 FA4 Analyzer 完整 Metrics 汇总
+- **原路径**：`/home/cken/crypto_world/zebra_pool/fa4/report/analyzer_summary.md`
+- **本地副本**：[`updates/20260525_update/reports/fa4_analyzer_summary.md`](updates/20260525_update/reports/fa4_analyzer_summary.md)
+- **研究方向**：fa4 落地后 close-label 4 份 analyzer 报告（A-only/clip, B-only/rank, C-merged/clip, D-merged/rank）的核心 IC/RankIC 汇总
+- **核心结论**：fa4 单 FA Valid RankIC 0.0153~0.0202 偏弱；fa4+SOTA100 merged 在 rank 模式 Valid RankIC 提升到 0.0444，但与本期最终 mid-label SOTA E2 (0.0579) 不直接可比
+
+> ⚠️ fa4 的 `analyzer_summary.md` 严格意义上是 realize-factor skill 副产物，但因其与本期 mid-label 决策有直接对照价值，按个例收录。
+
+### 4. 相关 Project Issues
+
+| # | 标题 | 状态 | 一句话（进展/结论） | 链接 |
+|---|------|------|-------------------|------|
+| #117 | Analyzer LGBM 前瞻收益 vs Backtest 实盘：85-120% capture gap 深度归因 | OPEN | Phase 7 完成：Valid close-basis "+7.61 bps" 几乎 100% artifact；催生 #119 mid 迁移 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/117 |
+| #118 | crypto MCP 改进设计（对齐 HFT 投研流程） | OPEN | 设计稿讨论中，未落地 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/118 |
+| #119 | Crypto Spread 分布研究 + Label/Net-Return 口径评估 | OPEN | mid-label 主口径确认 + basic_table 锚点确认（target §1.2.1/§1.6 已更新） | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/119 |
+| #120 | Close-based features 全面 mid 化 follow-up | OPEN | fa1/fa2/fa3/fa4 整池 mid 化已完成 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/120 |
+| #121 | basic_table 底表实现计划 | OPEN | basic_table 上线，168 cells alignment 全 PASS（见 §3.2） | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/121 |
+| #122 | FA3/FA4 mid-label 重验 campaign | OPEN | campaign #122/#123 完成；最终 mid SOTA = E2_mid_sota100 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/122 |
+| #124 | Analyzer RankIC 与 BT PnL 不一致：评价体系需要迭代对齐 | OPEN | 评价体系问题立项；memory feedback 沉淀；待后续 BT pipeline 迭代 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/124 |
+| #114 | Crypto 投研方法论改进：fa3 评估流程漏洞归因 | OPEN | 本期新增证据：mid-label 下 fa3/fa4 仍无法进 SOTA，4 条 hard gate 进一步强化 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/114 |
+| #116 | Crypto 投研首次 benchmark #0 落定 | OPEN (建议关闭) | 已被 Refresh #1 (E2 mid_sota100) 取代 | https://github.com/ligenjian001-ai/hft-sdk-issues/issues/116 |
+
+### 5. Target / 方法论变化
+
+> 本期 `target_and_workflow.md` 已被用户在 04-19 手工更新（5 个 commit：`f0ad5c2` / `8014978` / `c234b0a` / `35ffa84` / `ce13fd4`），主要变更：
+> - 顶部加 "重大变更 2026-04-19" 横幅
+> - §1.2.1 新增 "Label basis（mid-label 主口径）"
+> - §1.3 数据表新增 basic_table 行（覆盖 225 天，ETH 224 天）
+> - §1.6 方法论原则加 mid-label 主口径条款
+>
+> 本 meta-review 仅记录这些变化已生效。
+
+新出现的方法论沉淀（仅 memory 层，target 暂未引用）：
+- `[[feedback_sota_judgement_multi_metric]]` — SOTA 不能单凭 Valid RankIC，须看 price path + Top0.1% net
+- `[[feedback_statistical_power_small_valid]]` — 42 天 Valid 难以区分 +0.001 RankIC 量级差异，需 Welch t-test
+
+建议下一轮（或独立 session）把这两条吸收进 `target_and_workflow.md` §1.5 评估口径或 §1.6 方法论原则。
+
+### 6. 本期观察到的模式 / 待关注方向
+
+1. **mid-label 大迁移闭环已完成**：从 issue #117 归因 → #119 决策 → #120/#121 工程 → campaign #122/#123 重验 → SOTA Refresh #1，一周内完成大型基础设施 + 模型口径迁移。这是 crypto 投研架构上最重要的进展。
+2. **fa3 与 fa4 都进入了"已落地但不入 SOTA"状态**：连续两个 FA 整体净负向，需在下一轮 FA 之前正面回应 SKILL 同步（issue #114 v2 + #122 都指向同一 gap）。
+3. **Stage 5 benchmark refresh 已经形成 ad-hoc 路径但仍缺独立 skill**：本期 Refresh #1 完全是手工 + ad-hoc 脚本（`research/ic_fa1234_mid/`），未抽象为 repeatable skill。下一次 Refresh #2 之前建议先把流程标准化。
+4. **回测评价体系成熟度不足**（issue #124）：Analyzer RankIC vs BT PnL 不一致暴露评价体系层级问题，影响 SOTA 决策可信度。
+5. **04-23 之后 crypto 进入长停滞**：用户工作切到 HFT 与 lgj SDK audit，crypto 侧无新增 session / FA / realize。这是合理的节奏调整，但 Update #2 之后需明确"下次 meta-review 触发条件"。
+6. **session #65 是新方向起点未完成**：queue_survival_panel 仅完成 Phase 1，下一轮回 crypto 时若续做将是 fa5 的第一个候选源。
+
+### 7. 深度分析报告
+
+> 本期未触发定向深度分析（当前为可选项）。
+>
+> 候选定向题目（如未来需要）：
+> - "Refresh #1 后 fa3/fa4 仍负向的根因是什么？是研究质量问题还是 LGBM 集成层问题？"
+> - "评价体系迭代（issue #124）的具体方案"
+> - "Stage 5 benchmark refresh skill 化方案"
+
+---
+
 ## [2026-04-17] Update #1 (Bootstrap)
 
 **时间区间**：Bootstrap（历史全量） → 2026-04-17
