@@ -218,3 +218,76 @@ print(report_md)
 - `report_dir/metadata.json`、`report_dir/signal_rank_table.parquet`、`report_dir/coverage.parquet` 存在  
 - 若开启 LGBM：`model_output_dir/model.txt` 存在  
 - 其余产物解释与字段口径：严格以 `analyzer_user_manual.md` 为准  
+
+## 持久化产出（**强制 · 防止数据清理丢失**）
+
+`/data/db/hft/analyzer2/` 和 `/data/db/hft/model_output/` 都是**临时缓存目录**，可能被系统或共用人员清理。**任何要长期保留的报告产物必须物理复制到 HFTPool 下的对应目录**，仅 `cache/` 和 `memmap/` 等大数据可以留在 `/data/`。
+
+### 适用场景
+
+- 完成一次 standard report，且产物需要随 FA / benchmark 一同长期保留时（例如：`hft-realize-factor` 流程结束、`hft-benchmark-refresh` 流程结束、独立专项报告需要归档）
+- 用户明确要"把报告交付到 HFTPool"
+
+### 拷贝清单
+
+| 来源（临时） | 目的（持久化） | 必须 / 可选 |
+|---|---|---|
+| `{report_dir}/report.md` | `{persist_dir}/report.md` | 必须 |
+| `{report_dir}/metadata.json` | `{persist_dir}/metadata.json` | 必须 |
+| `{report_dir}/img/` | `{persist_dir}/img/` | 必须 |
+| `{report_dir}/signal_summary.parquet` | `{persist_dir}/signal_summary.parquet` | 必须 |
+| `{report_dir}/signal_rank_table.parquet` | `{persist_dir}/signal_rank_table.parquet` | 必须 |
+| `{report_dir}/daily_ic.parquet` | `{persist_dir}/daily_ic.parquet` | 必须 |
+| `{report_dir}/coverage.parquet` | `{persist_dir}/coverage.parquet` | 必须 |
+| `{report_dir}/sample_overview.parquet` | `{persist_dir}/sample_overview.parquet` | 必须 |
+| `{report_dir}/profiling.md / profiling.parquet` | `{persist_dir}/` | 推荐 |
+| `{model_output_dir}/model.txt` | `{persist_dir}/saved_model/model.txt` | 必须（若开启 LGBM） |
+| `{model_output_dir}/lgbm_daily_ic_train.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
+| `{model_output_dir}/lgbm_daily_ic_valid.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
+| `{model_output_dir}/lgbm_daily_ic.parquet` | `{persist_dir}/saved_model/` | 推荐 |
+| `{model_output_dir}/feature_importance_gain.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
+| `{report_dir}/cache/` | — | **不复制**（GB-TB 级，可重生） |
+| `{model_output_dir}/memmap/` | — | **不复制**（同上） |
+| `{report_dir}/_checkpoint_passAB.pkl` | — | 可选（KB-MB 级，加速重跑但非必需） |
+
+### 拷贝示例
+
+```bash
+PERSIST="/home/cken/hft_projects/HFTPool/pool/FA{N}/report/analyzer2_xxx"
+# 或对于 benchmark refresh:
+# PERSIST="/home/cken/hft_projects/HFTPool/pool/benchmark{date}/report_top100"
+
+REPORT_SRC="/data/db/hft/analyzer2/{author}/{name}/{ver}"
+MODEL_SRC="/data/db/hft/model_output/{author}/{name}/{ver}"
+
+mkdir -p "$PERSIST/img" "$PERSIST/saved_model"
+
+# 报告核心文件
+cp -L "$REPORT_SRC/report.md"                "$PERSIST/"
+cp -L "$REPORT_SRC/metadata.json"            "$PERSIST/"
+cp -L "$REPORT_SRC/signal_summary.parquet"   "$PERSIST/"
+cp -L "$REPORT_SRC/signal_rank_table.parquet" "$PERSIST/"
+cp -L "$REPORT_SRC/daily_ic.parquet"         "$PERSIST/"
+cp -L "$REPORT_SRC/coverage.parquet"         "$PERSIST/"
+cp -L "$REPORT_SRC/sample_overview.parquet"  "$PERSIST/"
+cp -L "$REPORT_SRC/profiling.md"             "$PERSIST/" 2>/dev/null
+cp -L "$REPORT_SRC/profiling.parquet"        "$PERSIST/" 2>/dev/null
+cp -rL "$REPORT_SRC/img/."                   "$PERSIST/img/"
+
+# LGBM 模型物理副本（若开启）
+if [ -f "$MODEL_SRC/model.txt" ]; then
+  cp -L "$MODEL_SRC/model.txt"                       "$PERSIST/saved_model/"
+  cp -L "$MODEL_SRC/lgbm_daily_ic_train.parquet"     "$PERSIST/saved_model/"
+  cp -L "$MODEL_SRC/lgbm_daily_ic_valid.parquet"     "$PERSIST/saved_model/"
+  cp -L "$MODEL_SRC/lgbm_daily_ic.parquet"           "$PERSIST/saved_model/" 2>/dev/null
+  cp -L "$MODEL_SRC/feature_importance_gain.parquet" "$PERSIST/saved_model/"
+fi
+
+# 验证不含 symlink
+if find "$PERSIST" -type l | grep -q .; then
+  echo "ERROR: symlink in $PERSIST; must be physical copy" >&2
+  exit 1
+fi
+```
+
+**理由**：历史事故——2026-04-23 `/data/db/hft/analyzer2/` 清理导致 FA20-FA27 的 16 个软链交付报告全部 dangling；2026 年某次 `/data/db/hft/model_output/` 清理又导致 benchmark0323 的纯 SOTA LGBM 模型文件丢失。**任何"长期保留"的产物都必须用 `cp -L` 物理拷贝到 HFTPool 下，不得用 symlink 偷懒**。
