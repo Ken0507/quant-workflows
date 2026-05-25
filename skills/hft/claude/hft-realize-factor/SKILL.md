@@ -269,8 +269,27 @@ ${DELIVERY}/
     ├── data_validation_1m.md
     ├── code_review_report.md
     ├── perf_review_report.md
-    ├── analyzer2_new_only/ → $ANALYZER_OUT
-    └── analyzer2_merged_benchmark0323_top100/ → $ANALYZER_MERGED
+    ├── analyzer2_new_only/              # 完整拷贝 $ANALYZER_OUT 内容
+    └── analyzer2_merged_benchmark0323_top100/   # 完整拷贝 $ANALYZER_MERGED 内容
+```
+
+**严禁使用软链接（symlink）提交 Analyzer2 报告。** 必须用 `cp -rL` 将报告正文（`report.md`、`metadata.json`）、所有图片（`img/`）以及摘要 parquet（`signal_rank_table.parquet` / `daily_ic.parquet` / `signal_summary.parquet` 等）物理拷贝到 `${DELIVERY}/report/analyzer2_*/` 下。
+
+**理由**：`/data/db/hft/analyzer2/` 是共享临时缓存目录，可能被清理；若交付目录采用软链接指向该缓存，缓存清理后交付报告会全部失效（历史事故：2026-04-23 `/data/db/hft/analyzer2` 清理导致 FA20–FA27 的 16 个报告链接全部 dangling，需重刷）。
+
+拷贝命令示例：
+```bash
+mkdir -p "${DELIVERY}/report/analyzer2_new_only"
+cp -rL "${ANALYZER_OUT}/." "${DELIVERY}/report/analyzer2_new_only/"
+
+mkdir -p "${DELIVERY}/report/analyzer2_merged_benchmark0323_top100"
+cp -rL "${ANALYZER_MERGED}/." "${DELIVERY}/report/analyzer2_merged_benchmark0323_top100/"
+
+# 验证交付目录不含 symlink
+if find "${DELIVERY}/report" -type l | grep -q .; then
+  echo "ERROR: symlink detected in delivery; must copy physically" >&2
+  exit 1
+fi
 ```
 
 ### 5.2 最终合规检查（Task Compliance Monitor）
@@ -304,3 +323,4 @@ ${DELIVERY}/
 - **审查独立性**：Code Reviewer / Performance Reviewer / Task Compliance Monitor 不参与实现，只产出意见
 - **禁止中途对话**：问题写入 `${WORKSPACE}/issue.md`
 - **持续对照本文件**：每个 Step 完成后重读本 Skill 核对
+- **禁止软链接交付**：`${DELIVERY}/report/` 下不得出现任何 symlink；Analyzer2 报告必须以物理拷贝方式（`cp -rL`）落入交付目录（正文 + img + parquet），避免缓存清理导致 dangling
