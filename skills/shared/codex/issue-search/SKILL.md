@@ -5,7 +5,7 @@ description: "Search hft-sdk-issues for related issues by keyword, topic, or lab
 
 # Issue Search
 
-在 `ligenjian001-ai/hft-sdk-issues` 中搜索相关 issue。
+在 `hft-prop/hft-sdk-issues` 中搜索相关 issue。
 
 ## 使用方式
 
@@ -31,16 +31,16 @@ description: "Search hft-sdk-issues for related issues by keyword, topic, or lab
 
 prompt 中包含：
 - 搜索关键词
-- 搜索目标：`ligenjian001-ai/hft-sdk-issues`
+- 搜索目标：`hft-prop/hft-sdk-issues`
 
 subagent prompt 模板：
 
 ```
-在 ligenjian001-ai/hft-sdk-issues 中搜索以下关键词相关的 issue：{keywords}
+在 hft-prop/hft-sdk-issues 中搜索以下关键词相关的 issue：{keywords}
 
 执行步骤：
-1. 对每个关键词执行：gh issue list --repo ligenjian001-ai/hft-sdk-issues --search "<keyword>" --state all --limit 15 --json number,title,state,labels,createdAt
-2. 如果指定了 label 过滤：gh issue list --repo ligenjian001-ai/hft-sdk-issues --label "<label>" --state all --limit 15
+1. 对每个关键词执行：gh issue list --repo hft-prop/hft-sdk-issues --search "<keyword>" --state all --limit 15 --json number,title,state,labels,createdAt
+2. 如果指定了 label 过滤：gh issue list --repo hft-prop/hft-sdk-issues --label "<label>" --state all --limit 15
 3. 合并去重，按相关性分层（高度相关 / 可能相关）
 4. 对高度相关的 issue（最多 3 个），用 gh issue view <N> 读取摘要
 

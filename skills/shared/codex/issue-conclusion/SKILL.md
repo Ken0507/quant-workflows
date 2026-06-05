@@ -41,7 +41,7 @@ prompt 中包含：
 subagent prompt 模板：
 
 ```
-为 ligenjian001-ai/hft-sdk-issues 的 issue #<N> 撰写 conclusion 并标记 ready-to-close。
+为 hft-prop/hft-sdk-issues 的 issue #<N> 撰写 conclusion 并标记 ready-to-close。
 
 ## 最终成果概括
 {主进程概括的 5-10 句话}
@@ -52,8 +52,8 @@ subagent prompt 模板：
 ## 执行步骤
 
 1. **完整读取 issue 历史（必须！）**：
-   gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues
-   gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --comments
+   gh issue view <N> --repo hft-prop/hft-sdk-issues
+   gh issue view <N> --repo hft-prop/hft-sdk-issues --comments
 
    **重要原则**：
    - issue 上的 comments 可能来自多种来源：本次会话的 Codex、之前的 Claude 会话、之前的 Codex 会话、其他 agent、或人类（cken/lgj 等）
@@ -95,18 +95,18 @@ Participants: cken + Codex
 {未解决的问题或后续可做的事；没有就写"无"}
 
 3. **提交 comment**：
-   gh issue comment <N> --repo ligenjian001-ai/hft-sdk-issues --body "{conclusion}"
+   gh issue comment <N> --repo hft-prop/hft-sdk-issues --body "{conclusion}"
 
 4. **打标签**：
-   gh label create "ready-to-close" --repo ligenjian001-ai/hft-sdk-issues --description "Conclusion posted, ready to close" --color "0E8A16" 2>/dev/null || true
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "ready-to-close"
+   gh label create "ready-to-close" --repo hft-prop/hft-sdk-issues --description "Conclusion posted, ready to close" --color "0E8A16" 2>/dev/null || true
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "ready-to-close"
 
 5. **如果 notification=yes**：
-   gh label create "notification" --repo ligenjian001-ai/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "notification"
+   gh label create "notification" --repo hft-prop/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "notification"
    并在 conclusion 末尾追加：
    ---
-   cc @ligenjian001-ai
+   cc @genjian-li_scale
 
 6. **返回结果**：确认 conclusion 已发布，返回 comment URL 和 labels
 ```

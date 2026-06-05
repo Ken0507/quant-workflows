@@ -41,7 +41,7 @@ prompt 中包含：
 subagent prompt 模板：
 
 ```
-在 ligenjian001-ai/hft-sdk-issues 创建一个讨论/迭代 issue。
+在 hft-prop/hft-sdk-issues 创建一个讨论/迭代 issue。
 
 ## 话题
 {话题标题或描述}
@@ -55,7 +55,7 @@ subagent prompt 模板：
 ## 执行步骤
 
 1. **搜索关联 issue**：用 2-3 个关键词搜索
-   gh issue list --repo ligenjian001-ai/hft-sdk-issues --search "<keyword>" --state all --limit 10 --json number,title,state,labels
+   gh issue list --repo hft-prop/hft-sdk-issues --search "<keyword>" --state all --limit 10 --json number,title,state,labels
    对高度相关的 issue，用 gh issue view <N> 读取详情
 
 2. **确定 labels**：
@@ -89,17 +89,17 @@ Participants: cken + Codex
 
 4. **创建 issue**：
    确保 label 存在（不存在则先创建）：
-   gh label create "<label>" --repo ligenjian001-ai/hft-sdk-issues --description "<desc>" --color "<color>" 2>/dev/null || true
+   gh label create "<label>" --repo hft-prop/hft-sdk-issues --description "<desc>" --color "<color>" 2>/dev/null || true
 
-   gh issue create --repo ligenjian001-ai/hft-sdk-issues --title "{title}" --label "{labels}" --body "{body}"
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "agent:codex"
+   gh issue create --repo hft-prop/hft-sdk-issues --title "{title}" --label "{labels}" --body "{body}"
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "agent:codex"
 
 5. **如果 notification=yes**：
-   gh label create "notification" --repo ligenjian001-ai/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "notification"
+   gh label create "notification" --repo hft-prop/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "notification"
    并在 body 末尾追加：
    ---
-   cc @ligenjian001-ai
+   cc @genjian-li_scale
 
 6. **返回结果**：issue 编号、URL、标题、labels
 ```

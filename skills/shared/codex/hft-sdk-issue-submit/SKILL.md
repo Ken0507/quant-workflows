@@ -17,13 +17,13 @@ description: "由 Codex 向 lgj 的 hft-sdk-issues 仓库提交 Bug / Feature / 
 提交前先列出现有 open issues，判断是否已有重复或高度相关的 issue：
 
 ```bash
-gh issue list --repo ligenjian001-ai/hft-sdk-issues --state open
+gh issue list --repo hft-prop/hft-sdk-issues --state open
 ```
 
 如果有疑似相关的 issue，读取详情再决定是新建还是追评：
 
 ```bash
-gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues
+gh issue view <N> --repo hft-prop/hft-sdk-issues
 ```
 
 **判断原则**：
@@ -163,7 +163,7 @@ gh auth status
 
 ```bash
 gh issue create \
-  --repo ligenjian001-ai/hft-sdk-issues \
+  --repo hft-prop/hft-sdk-issues \
   --title "[BUG] 标题" \
   --label "bug,P1,needs-triage" \
   --body "$(cat <<'ISSUE_BODY'
@@ -187,14 +187,14 @@ ISSUE_BODY
 检查 `agent:codex` 标签是否已存在：
 
 ```bash
-gh label list --repo ligenjian001-ai/hft-sdk-issues | grep "agent:codex"
+gh label list --repo hft-prop/hft-sdk-issues | grep "agent:codex"
 ```
 
 若不存在，先创建：
 
 ```bash
 gh label create "agent:codex" \
-  --repo ligenjian001-ai/hft-sdk-issues \
+  --repo hft-prop/hft-sdk-issues \
   --description "Submitted by Codex" \
   --color "F9A825"
 ```
@@ -203,7 +203,7 @@ gh label create "agent:codex" \
 
 ```bash
 gh issue edit <N> \
-  --repo ligenjian001-ai/hft-sdk-issues \
+  --repo hft-prop/hft-sdk-issues \
   --add-label "agent:codex"
 ```
 
@@ -212,7 +212,7 @@ gh issue edit <N> \
 ## 第六步：验证提交结果
 
 ```bash
-gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --json number,title,labels,state \
+gh issue view <N> --repo hft-prop/hft-sdk-issues --json number,title,labels,state \
   -q '{number: .number, title: .title, state: .state, labels: [.labels[].name]}'
 ```
 

@@ -173,7 +173,7 @@ metadata:
 
 ```bash
 gh issue list \
-  --repo ligenjian001-ai/hft-sdk-issues \
+  --repo hft-prop/hft-sdk-issues \
   --label "project:quant_trading" \
   --search "updated:>={since}" \
   --state all \

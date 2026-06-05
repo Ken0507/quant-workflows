@@ -213,7 +213,7 @@ fi = pd.read_parquet(mout/'feature_importance_gain.parquet')  # cols: feature, g
 
 ```bash
 gh issue list \
-  --repo ligenjian001-ai/hft-sdk-issues \
+  --repo hft-prop/hft-sdk-issues \
   --label "project:quant_trading" \
   --search "updated:>={since}" \
   --state all \
@@ -539,5 +539,5 @@ Step 3 产出的 markdown 无论用户对问题 1-4 的回答如何，都已落�
 | Bar 模式 | AmountBar（volume clock） | `bar_aggtrans_time_1`（agg trans 时间） |
 | Label horizon | next100 ~ next200（~5-10 分钟） | next100（bar 单位，within_session） |
 | 主预测口径 | mid-to-mid | mid-to-mid（within_session） |
-| GitHub repo (issues) | `ligenjian001-ai/hft-sdk-issues` (label `project:quant_trading`) | 同上（同一 repo，按关键词区分） |
+| GitHub repo (issues) | `hft-prop/hft-sdk-issues` (label `project:quant_trading`) | 同上（同一 repo，按关键词区分） |
 | 实盘 | 暂无 | Benchmark100Trader 在交易机（本 skill 不追踪） |

@@ -37,7 +37,7 @@ description: "为当前讨论的话题在 hft-sdk-issues 创建一个结构化 i
 subagent prompt 模板：
 
 ```
-在 ligenjian001-ai/hft-sdk-issues 创建一个讨论/迭代 issue。
+在 hft-prop/hft-sdk-issues 创建一个讨论/迭代 issue。
 
 ## 话题
 {话题标题或描述}
@@ -51,7 +51,7 @@ subagent prompt 模板：
 ## 执行步骤
 
 1. **搜索关联 issue**：用 2-3 个关键词搜索
-   gh issue list --repo ligenjian001-ai/hft-sdk-issues --search "<keyword>" --state all --limit 10 --json number,title,state,labels
+   gh issue list --repo hft-prop/hft-sdk-issues --search "<keyword>" --state all --limit 10 --json number,title,state,labels
    对高度相关的 issue，用 gh issue view <N> 读取详情
 
 2. **确定 labels**：
@@ -60,7 +60,15 @@ subagent prompt 模板：
    - 来源 label：agent:claude-code
    - 不加 P0/P1/P2 和 needs-triage
 
-3. **起草 issue 正文**，格式（**前两行必须是 Time 和 Participants**）：
+3. **起草 issue 正文**。
+
+   **正文风格（硬规则）**：
+   - 只写：问题/疑问本身、背景事实与数据、约束/红线、中性的开放问题（不能 hint 答案）、关联 issue/docs/路径。
+   - 默认禁写：**尚未拍板**的推荐方案、milestone 拆解（M1/M2…）、待办 checklist、多选项对比表、带「建议」语气的句子。Issue 是登记问题供后续推进的载体，过早 propose 未定方案会锚定讨论。
+   - **例外**：方案/决策**已在对话中讨论拍板**的，应当如实记录（如 #158 已敲定的本机日报方案、#164 已落地的 skill）。判据是「定了没」——已定的方案/已发生的事实要写，未定的提案不写。
+   - **拿不准就问**：若某段内容（尤其方案是否算「已拍板」）不确定该不该写进 issue，先向用户确认，不要自行决定。
+
+   格式（**前两行必须是 Time 和 Participants**）：
 
 Time: YYYY-MM-DD HH:MM:SS
 Participants: cken + Claude Code
@@ -85,17 +93,17 @@ Participants: cken + Claude Code
 
 4. **创建 issue**：
    确保 label 存在（不存在则先创建）：
-   gh label create "<label>" --repo ligenjian001-ai/hft-sdk-issues --description "<desc>" --color "<color>" 2>/dev/null || true
+   gh label create "<label>" --repo hft-prop/hft-sdk-issues --description "<desc>" --color "<color>" 2>/dev/null || true
 
-   gh issue create --repo ligenjian001-ai/hft-sdk-issues --title "{title}" --label "{labels}" --body "{body}"
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "agent:claude-code"
+   gh issue create --repo hft-prop/hft-sdk-issues --title "{title}" --label "{labels}" --body "{body}"
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "agent:claude-code"
 
 5. **如果 notification=yes**：
-   gh label create "notification" --repo ligenjian001-ai/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "notification"
+   gh label create "notification" --repo hft-prop/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "notification"
    并在 body 末尾追加：
    ---
-   cc @ligenjian001-ai
+   cc @genjian-li_scale
 
 6. **返回结果**：issue 编号、URL、标题、labels
 ```

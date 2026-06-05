@@ -43,7 +43,7 @@ prompt 中包含：
 subagent prompt 模板：
 
 ```
-为 ligenjian001-ai/hft-sdk-issues 的 issue #<N> 追加进展 comment。
+为 hft-prop/hft-sdk-issues 的 issue #<N> 追加进展 comment。
 
 ## 对话进展
 {主进程概括的 5-10 句话}
@@ -57,8 +57,8 @@ subagent prompt 模板：
 ## 执行步骤
 
 1. **读取 issue 上下文**：
-   gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues
-   gh issue view <N> --repo ligenjian001-ai/hft-sdk-issues --comments
+   gh issue view <N> --repo hft-prop/hft-sdk-issues
+   gh issue view <N> --repo hft-prop/hft-sdk-issues --comments
    了解之前记录到哪里了。
 
 2. **起草 comment**，格式（**前两行必须是 Time 和 Participants**）：
@@ -83,14 +83,14 @@ Participants: cken + Codex
 格式灵活，按实际内容增减 section。记结论不记过程。
 
 3. **提交 comment**：
-   gh issue comment <N> --repo ligenjian001-ai/hft-sdk-issues --body "{comment}"
+   gh issue comment <N> --repo hft-prop/hft-sdk-issues --body "{comment}"
 
 4. **如果 notification=yes**：
-   gh label create "notification" --repo ligenjian001-ai/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
-   gh issue edit <N> --repo ligenjian001-ai/hft-sdk-issues --add-label "notification"
+   gh label create "notification" --repo hft-prop/hft-sdk-issues --description "Important update, needs attention" --color "E11D48" 2>/dev/null || true
+   gh issue edit <N> --repo hft-prop/hft-sdk-issues --add-label "notification"
    并在 comment 末尾追加：
    ---
-   cc @ligenjian001-ai
+   cc @genjian-li_scale
 
 5. **返回结果**：确认 comment 已追加，返回 comment URL
 ```
