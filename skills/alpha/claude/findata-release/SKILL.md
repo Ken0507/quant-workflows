@@ -1,6 +1,6 @@
 ---
 name: findata-release
-description: "findata 定版发布：预检 CHANGELOG/工作区 → scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /findata-deploy release 部署到新疆投研机公共环境。"
+description: "findata 定版发布：预检 CHANGELOG/工作区 → 门① 真实数据零差对账（需 jydb）→ scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /findata-deploy release 部署到新疆投研机公共环境。"
 ---
 
 # findata-release — findata 定版发布
@@ -45,12 +45,18 @@ git log origin/main..HEAD       # 必须与 origin 同步（release.sh 也会强
 
 ### 3. 发布
 
+发布前先确保 **jydb 可连**（门①要用）：本机 `bash ~/alpha_projects/_real_data_harness/start_jydb_relay.sh`
+后 `export FINDATA_MYSQL_DSN=...`；投研机 conda env vars 已注入。
+
 ```bash
-scripts/release.sh X.Y.Z          # 可先 scripts/release.sh X.Y.Z --dry-run 预演
+scripts/release.sh X.Y.Z          # 可先 scripts/release.sh X.Y.Z --dry-run 预演（dry-run 也跑门①）
 ```
 
-脚本自带全部预检（main / 干净 / 同步 / tag 不存在 / 版本递增 / CHANGELOG 非空），
-任一失败即中止；成功 = release commit + annotated tag 已 push。
+脚本自带全部预检（main / 干净 / 同步 / tag 不存在 / 版本递增 / CHANGELOG 非空），随后跑
+**门① 真实数据零差对账**（`scripts/release_gate_realdata.py`：用真实 jydb 把财务合并口径与原始 SQL
+逐项对账，逮 #15 这类"mock 单测全绿、真实数据 NaN"的回归），**门①不过即中止、不打 tag**
+（fin-infra/findata#27）。任一步失败即中止；成功 = release commit + annotated tag 已 push。
+> 无 jydb 连接的应急发版：`scripts/release.sh X.Y.Z --skip-realdata-gate`（跳过门①，风险自负）。
 
 ### 4. 验证 CI（fin-infra 仓 gh 操作必须带 token）
 
