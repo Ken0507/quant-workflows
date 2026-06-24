@@ -45,7 +45,7 @@ git log origin/main..HEAD       # 必须与 origin 同步（release.sh 也会强
 
 ### 3. 发布
 
-发布前先确保 **jydb 可连**（门①要用）：本机 `bash ~/alpha_projects/_real_data_harness/start_jydb_relay.sh`
+发布前先确保 **jydb 可连**（门①要用）：本机 `bash ~/alpha_projects/researches/_real_data_harness/start_jydb_relay.sh`
 后 `export FINDATA_MYSQL_DSN=...`；投研机 conda env vars 已注入。
 
 ```bash
