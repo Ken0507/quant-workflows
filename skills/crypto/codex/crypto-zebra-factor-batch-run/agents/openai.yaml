@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Zebra Factor Batch Run"
+  short_description: "Zebra 批量因子生成"
+  default_prompt: "Use $crypto-zebra-factor-batch-run when the user request matches this skill: 使用 Zebra batch_runner 批量刷因子数据。处理编译验证、日期范围、chunk 配置、L2 数据、输出路径、manifest 管理。调用前需要已通过 crypto-zebra-factor-write 的 smoke test。 Argument hint: [binary_path] [date_range] [output_dir]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

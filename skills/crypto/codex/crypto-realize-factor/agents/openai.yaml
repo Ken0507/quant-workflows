@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Realize Factor"
+  short_description: "按 factor_list 文档实现因子全流程"
+  default_prompt: "Use $crypto-realize-factor when the user request matches this skill: 根据 FA*_factor_list.md 文档实现因子的完整工程流程：C++ 实现 → Code Review → 性能优化 → Performance Review → Smoke Test → 1 个月强验证 → 刷全历史 → Analyzer 报告 → 交付。调用格式：/crypto-realize-factor /path/to/FA03_factor_list.md Argument hint: [factor_list.md 路径]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

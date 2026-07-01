@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Loose Ends"
+  short_description: "审计本会话的收尾遗留:讨论了却没记进 issue 的内容、没提交/没推/没合的代码与 PR、发了版没部署、临时密钥没清、该存的 memory 没存等。逐项核实当前真实状态后按「已闭环 / 需你决策 / 可选补充」分类列出,交用户判断——只报告,不擅自行动。用于长会话/多步任务结束前的收尾自检。"
+  default_prompt: "Use $session-loose-ends when the user request matches this skill: 审计本会话的收尾遗留:讨论了却没记进 issue 的内容、没提交/没推/没合的代码与 PR、发了版没部署、临时密钥没清、该存的 memory 没存等。逐项核实当前真实状态后按「已闭环 / 需你决策 / 可选补充」分类列出,交用户判断——只报告,不擅自行动。用于长会话/多步任务结束前的收尾自检。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

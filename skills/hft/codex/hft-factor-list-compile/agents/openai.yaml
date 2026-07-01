@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Factor List Compile"
+  short_description: "合并研究报告 → 标准化 factor_list 文档"
+  default_prompt: "Use $hft-factor-list-compile when the user request matches this skill: 将多个深度研究报告（ob_research/{N}-{topic}）的因子定义合并整理成一份标准化的 FA*_factor_list.md 文档。调用格式：/hft-factor-list-compile 3-6 -> FA20（研究编号3到6合并为FA20）或 /hft-factor-list-compile 3,5,8 -> FA21（指定编号合并）。整理完成后由独立审阅 Agent 检查口径一致性和无歧义性。 Argument hint: 研究编号范围或列表 -> FA编号. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

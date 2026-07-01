@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Local Strategy Backtest"
+  short_description: "本机离线回测 live 策略（含二进制安全闸）"
+  default_prompt: "Use $hft-local-strategy-backtest when the user request matches this skill: 在 cken 工作站本机用纯 BacktestRunner 离线回测 live 策略（baseline_150 / score_maker），不连 broker、零实盘风险。适用于研究验证、SDK fix 验证、日报 sim 侧复跑等场景。内置回测二进制安全闸：严禁用 *_trader_online 跑回测。 Argument hint: [策略名] [YYYYMMDD 或日期区间]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

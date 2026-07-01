@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Research Log"
+  short_description: "在研究任务中持续记录工作日志。每次尝试新方法、获得结果、与codex讨论或开启subagent时，都需在工作目录的 research_log.md 中追加带时间戳的日志条目。用于追踪研究过程、记录思路和决策。"
+  default_prompt: "Use $write-research-log when the user request matches this skill: 在研究任务中持续记录工作日志。每次尝试新方法、获得结果、与codex讨论或开启subagent时，都需在工作目录的 research_log.md 中追加带时间戳的日志条目。用于追踪研究过程、记录思路和决策。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

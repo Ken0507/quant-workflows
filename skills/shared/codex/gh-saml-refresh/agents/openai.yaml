@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH SAML Refresh"
+  short_description: "git push / gh 操作被 SAML 过期或 token 缺 scope 拒绝时，在 headless 机器上跑 GitHub device flow 刷新授权：pty 控制器自动过确认提示 → 提取一次性 code 给用户浏览器输入 → 验证 scope → HTTPS+token 补推。含完整坑清单。"
+  default_prompt: "Use $gh-saml-refresh when the user request matches this skill: git push / gh 操作被 SAML 过期或 token 缺 scope 拒绝时，在 headless 机器上跑 GitHub device flow 刷新授权：pty 控制器自动过确认提示 → 提取一次性 code 给用户浏览器输入 → 验证 scope → HTTPS+token 补推。含完整坑清单。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Axis Alignment Check"
+  short_description: "因子轴对齐检查"
+  default_prompt: "Use $crypto-axis-alignment-check when the user request matches this skill: 检查因子输出与 basic_table anchor 的 Join 轴对齐与 bar 覆盖情况。用于 smoke test 后、大规模刷数前的验证。检查 3-5 天全 symbol 数据，要求 join 成功率与 bar 覆盖率均 >= 99.9%，无重复 bar。 Argument hint: [factor_root] [factor_sub] [dates]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

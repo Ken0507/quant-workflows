@@ -1,0 +1,4 @@
+interface:
+  display_name: "Translate To Zh"
+  short_description: "将英文 Markdown 文档翻译为中文。参数可为单个 .md 文件路径（翻译后写入 doc_zh.md）或目录路径（在同级生成 <dir>_zh 目录，保留原目录结构，翻译其中所有 .md 文件）。对 ob-research 项目目录（hft 或 crypto）做特殊处理：在项目目录下新建 report_zh/ 子目录，翻译其中的顶层 .md 文件。学术名词、专有名词、代码、公式、命令保持英文原文不变，其余内容翻译为中文。翻译工作通过 Codex subagent 执行。"
+  default_prompt: "Use $translate-to-zh when the user request matches this skill: 将英文 Markdown 文档翻译为中文。参数可为单个 .md 文件路径（翻译后写入 doc_zh.md）或目录路径（在同级生成 <dir>_zh 目录，保留原目录结构，翻译其中所有 .md 文件）。对 ob-research 项目目录（hft 或 crypto）做特殊处理：在项目目录下新建 report_zh/ 子目录，翻译其中的顶层 .md 文件。学术名词、专有名词、代码、公式、命令保持英文原文不变，其余内容翻译为中文。翻译工作通过 Codex subagent 执行。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

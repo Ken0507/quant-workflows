@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Live Strategy Deploy"
+  short_description: "将 TradingAgent 实盘策略部署到交易机。包括 playground deploy（Docker 编译 + SCP 上传）、上传带交易参数的 prod_run/run.sh、验证部署结果。适用于首次部署、重新部署、代码更新后的重新上线等场景。执行前必须确认用户授权。"
+  default_prompt: "Use $hft-live-strategy-deploy when the user request matches this skill: 将 TradingAgent 实盘策略部署到交易机。包括 playground deploy（Docker 编译 + SCP 上传）、上传带交易参数的 prod_run/run.sh、验证部署结果。适用于首次部署、重新部署、代码更新后的重新上线等场景。执行前必须确认用户授权。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

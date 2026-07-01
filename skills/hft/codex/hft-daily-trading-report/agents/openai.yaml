@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Daily Trading Report"
+  short_description: "每日盘后从交易机拉取 Benchmark100Trader 实盘数据，归档日志，运行分析并生成包含图表的每日交易报告。适用于收盘后执行，生成报告到 /home/cken/hft_projects/daily_trading_report/{yyyymmdd}/。"
+  default_prompt: "Use $hft-daily-trading-report when the user request matches this skill: 每日盘后从交易机拉取 Benchmark100Trader 实盘数据，归档日志，运行分析并生成包含图表的每日交易报告。适用于收盘后执行，生成报告到 /home/cken/hft_projects/daily_trading_report/{yyyymmdd}/。 Argument hint: [date: YYYYMMDD, 默认=今天]. Prefer explicit user intent before using this skill. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Meta Review"
+  short_description: "定期 meta-review crypto 投研产出，生成阶段总结并更新 sota + updates"
+  default_prompt: "Use $crypto-meta-review when the user request matches this skill: 周期性对 crypto 投研工作做 meta review：读取 target_and_workflow / sota_snapshot / research_updates 三份基础文档，在可预测路径（zebra_pool / crypto_ob_research / factor_agent_docs / analyzer 输出）下扫描自上次 update 以来的新增产出，生成阶段性总结并询问用户是否更新 sota_snapshot 和 research_updates。支持可选 direction 参数做定向深度分析。 Argument hint: [direction | since-date] (可选). Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

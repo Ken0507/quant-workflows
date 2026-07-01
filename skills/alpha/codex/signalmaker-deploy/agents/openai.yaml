@@ -1,0 +1,4 @@
+interface:
+  display_name: "SignalMaker Deploy"
+  short_description: "SignalMaker 部署到新疆投研机 k8s-worker-01：dev 模式同步源码副本调试；release 模式 build wheel → wheelhouse 发包 → 安装公共 py311 环境 → smoke 验证。挂在 findata 部署链上（公共环境须已有 findata+cube）。"
+  default_prompt: "Use $signalmaker-deploy when the user request matches this skill: SignalMaker 部署到新疆投研机 k8s-worker-01：dev 模式同步源码副本调试；release 模式 build wheel → wheelhouse 发包 → 安装公共 py311 环境 → smoke 验证。挂在 findata 部署链上（公共环境须已有 findata+cube）。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

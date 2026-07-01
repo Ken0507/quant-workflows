@@ -1,0 +1,4 @@
+interface:
+  display_name: "Findata Release"
+  short_description: "findata 定版发布：预检 CHANGELOG/工作区 → 门① 真实数据零差对账（需 jydb）→ scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /findata-deploy release 部署到新疆投研机公共环境。"
+  default_prompt: "Use $findata-release when the user request matches this skill: findata 定版发布：预检 CHANGELOG/工作区 → 门① 真实数据零差对账（需 jydb）→ scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /findata-deploy release 部署到新疆投研机公共环境。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

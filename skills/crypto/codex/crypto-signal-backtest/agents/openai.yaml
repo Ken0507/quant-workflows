@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Signal Backtest"
+  short_description: "从 Analyzer LGBM 模型导出信号 → 并行回测 → 综合分析报告（train/valid、maker/taker、持仓分布）"
+  default_prompt: "Use $crypto-signal-backtest when the user request matches this skill: 从 Analyzer LGBM 模型导出信号 → 并行回测 → 综合分析报告（train/valid、maker/taker、持仓分布） Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

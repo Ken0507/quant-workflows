@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Intraday Trading Analysis"
+  short_description: "盘中从交易机拉取 Benchmark100Trader 实时日志和 Session CSV，运行轻量分析脚本，输出 Roundtrip 明细、PnL、撤单率、信号 Score 和延迟统计。适用于交易时段内快速了解策略运行状态。"
+  default_prompt: "Use $hft-intraday-trading-analysis when the user request matches this skill: 盘中从交易机拉取 Benchmark100Trader 实时日志和 Session CSV，运行轻量分析脚本，输出 Roundtrip 明细、PnL、撤单率、信号 Score 和延迟统计。适用于交易时段内快速了解策略运行状态。 Argument hint: [date: YYYYMMDD, 默认=今天]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

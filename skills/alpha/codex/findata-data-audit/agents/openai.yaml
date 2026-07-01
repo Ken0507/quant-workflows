@@ -1,0 +1,4 @@
+interface:
+  display_name: "Findata Data Audit"
+  short_description: "对 findata 某数据块做真实数据逐接口验收:主控独立从 jydb 厂商表复算 ground truth 逐字段对账 + 全市场深度 EDA 找尾部 bug + notebook 交付 + 跟踪到 #35。用于校对 fin-infra/findata#35 里没验的块(风险模型/事件族/维表/universe)或新发版验收。要有样例、基于真实数据深挖、区分 bug/已知限制/口径。"
+  default_prompt: "Use $findata-data-audit when the user request matches this skill: 对 findata 某数据块做真实数据逐接口验收:主控独立从 jydb 厂商表复算 ground truth 逐字段对账 + 全市场深度 EDA 找尾部 bug + notebook 交付 + 跟踪到 #35。用于校对 fin-infra/findata#35 里没验的块(风险模型/事件族/维表/universe)或新发版验收。要有样例、基于真实数据深挖、区分 bug/已知限制/口径。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

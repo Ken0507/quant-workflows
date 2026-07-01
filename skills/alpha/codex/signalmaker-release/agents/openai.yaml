@@ -1,0 +1,4 @@
+interface:
+  display_name: "SignalMaker Release"
+  short_description: "SignalMaker 定版发布：预检 CHANGELOG/工作区 → scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /signalmaker-deploy release 部署到新疆投研机公共环境。"
+  default_prompt: "Use $signalmaker-release when the user request matches this skill: SignalMaker 定版发布：预检 CHANGELOG/工作区 → scripts/release.sh 打 tag → 验证 CI（wheel + GitHub Release + Pages 文档）。发布后衔接 /signalmaker-deploy release 部署到新疆投研机公共环境。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

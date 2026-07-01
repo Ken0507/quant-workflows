@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Zebra Factor Write"
+  short_description: "Zebra C++ 因子 Agent 实现"
+  default_prompt: "Use $crypto-zebra-factor-write when the user request matches this skill: 按 FA*_factor_list.md 文档在 Zebra 框架中实现 C++ 因子 Agent。处理工作目录初始化（从 factor_template 复制）、Agent 编码（trade-only + OrderBook 因子）、编译、smoke test。 Argument hint: [factor_list.md 路径]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Remote Backtest"
+  short_description: "交易机 DualRunner 远程回测并回传结果"
+  default_prompt: "Use $hft-remote-backtest when the user request matches this skill: 在交易机上使用 DualRunner 二进制运行回测，并将结果同步回本地分析。适用于需要用生产参数对单、验证策略行为或利用交易机独有数据的场景。 Argument hint: [策略名/参数]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

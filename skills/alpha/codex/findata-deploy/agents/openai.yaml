@@ -1,0 +1,4 @@
+interface:
+  display_name: "Findata Deploy"
+  short_description: "findata+cube 部署到新疆投研机 k8s-worker-01：dev 模式同步源码副本调试；release 模式 build wheel → wheelhouse 发包 → 安装公共 py311 环境 → smoke 验证。含验收清单与回滚方法。"
+  default_prompt: "Use $findata-deploy when the user request matches this skill: findata+cube 部署到新疆投研机 k8s-worker-01：dev 模式同步源码副本调试；release 模式 build wheel → wheelhouse 发包 → 安装公共 py311 环境 → smoke 验证。含验收清单与回滚方法。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

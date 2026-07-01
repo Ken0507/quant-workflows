@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT VPN Tunnel Restore"
+  short_description: "恢复工作站到交易机的 SSH 隧道（localhost:2223 → 192.168.10.215）。检查 EasyConnect Docker VPN 状态，通过容器内 xdotool 自动化登录 EasyConnect GUI（短信验证码与改密需用户配合），然后让 lgj 的常驻 ssh 转发自动恢复（或手动建立本地端口转发）。"
+  default_prompt: "Use $hft-vpn-tunnel-restore when the user request matches this skill: 恢复工作站到交易机的 SSH 隧道（localhost:2223 → 192.168.10.215）。检查 EasyConnect Docker VPN 状态，通过容器内 xdotool 自动化登录 EasyConnect GUI（短信验证码与改密需用户配合），然后让 lgj 的常驻 ssh 转发自动恢复（或手动建立本地端口转发）。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

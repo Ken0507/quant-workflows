@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Huatai VPN Connect"
+  short_description: "连接华泰(新券商)交易机的方法:起华泰行知零信任 VPN(奇安信 TrustAgent,docker 容器 workstation-ops/docker/huatai-vpn)并 SSH 接入交易机 cken@10.46.13.34:8888(注意端口 8888 不是 22)。工作站经容器 SOCKS5(127.0.0.1:1082)直连即可 `ssh huatai-trading`,不依赖 Mac。换券商 broker switch #166/#168 的接入链路。"
+  default_prompt: "Use $hft-huatai-vpn-connect when the user request matches this skill: 连接华泰(新券商)交易机的方法:起华泰行知零信任 VPN(奇安信 TrustAgent,docker 容器 workstation-ops/docker/huatai-vpn)并 SSH 接入交易机 cken@10.46.13.34:8888(注意端口 8888 不是 22)。工作站经容器 SOCKS5(127.0.0.1:1082)直连即可 `ssh huatai-trading`,不依赖 Mac。换券商 broker switch #166/#168 的接入链路。 Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

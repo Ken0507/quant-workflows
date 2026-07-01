@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Benchmark Refresh"
+  short_description: "把累积 FA 合并跑 LGBM 选 Top N，落 benchmark{YYYYMMDD}/ 作为新一代 SOTA"
+  default_prompt: "Use $hft-benchmark-refresh when the user request matches this skill: 执行 HFT 投研的 Stage R Benchmark Refresh：把当前 baseline + 累积的新 FA 合并跑一次 LGBM，选取 gain Top N（默认 N=100）作为新一代 benchmark。模板来源 HFTPool/pool/benchmark0323/run_benchmark.py + run_top100.py。产出 HFTPool/pool/benchmark{YYYYMMDD}/ 标准目录，含 run_benchmark.py + run_top100.py + report/ + report_top100/。这是 sota_snapshot 更新的实质触发点，下一次 /hft-meta-review 会检测并把新 benchmark 写入 SOTA 指针。 Argument hint: [date] [datasets|default] [top_n=100] (可选). Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

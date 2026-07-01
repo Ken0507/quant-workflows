@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crypto Analyzer Standard Report"
+  short_description: "Crypto 因子分析报告"
+  default_prompt: "Use $crypto-analyzer-standard-report when the user request matches this skill: 使用 crypto analyzer 生成标准化 LGBM 因子分析报告。默认跑 LGBM-only 模式（clip + rank 两份），剔除 20251010 数据。可选跑完整单因子分析或 merged baseline 报告。 Argument hint: [data_root] [subfolder] [output_base]. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."

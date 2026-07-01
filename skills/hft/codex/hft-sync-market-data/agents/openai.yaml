@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Sync Market Data"
+  short_description: "从交易机同步 bond_sz 行情数据（order + transaction parquet）到工作站 /data/share/dev/hft/data/market_data_parquet/。支持全量增量同步、单日同步、日期范围同步。同步完成后自动验证数据完整性。"
+  default_prompt: "Use $hft-sync-market-data when the user request matches this skill: 从交易机同步 bond_sz 行情数据（order + transaction parquet）到工作站 /data/share/dev/hft/data/market_data_parquet/。支持全量增量同步、单日同步、日期范围同步。同步完成后自动验证数据完整性。 Argument hint: [YYYYMMDD] [YYYYMMDD] -- 可选：单日或日期范围. Follow the skill workflow exactly and preserve any required gates, checks, and external-command safety rules."
