@@ -1,4 +1,4 @@
 interface:
   display_name: "Sync Skills"
-  short_description: "Scan quant-workflows skills and create any missing Claude/Codex symlinks"
-  default_prompt: "Use $sync-skills after adding, migrating, renaming, or deleting a skill under quant-workflows/skills/, or whenever the Claude/Codex symlink layout may be stale. Scan all canonical skill sources, create missing symlinks with absolute paths, and report conflicts or orphaned links without deleting anything. Delegate the scan and sync work to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."
+  short_description: "Scan quant-workflows skills and create any missing Claude/Codex symlinks, including alpha"
+  default_prompt: "Use $sync-skills after adding, migrating, renaming, or deleting a skill under quant-workflows/skills/, or whenever the Claude/Codex symlink layout may be stale. Scan shared, hft, crypto, and alpha canonical skill sources, create missing symlinks with absolute paths, and report conflicts or orphaned links without deleting anything. Delegate the scan and sync work to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."

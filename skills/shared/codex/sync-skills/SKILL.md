@@ -43,11 +43,13 @@ prompt 中包含完整的同步逻辑（见下方模板）。
 | hft      | codex  | /home/cken/hft_projects/.codex/skills/ |
 | crypto   | claude | /home/cken/crypto_world/.claude/skills/|
 | crypto   | codex  | /home/cken/crypto_world/.codex/skills/ |
+| alpha    | claude | /home/cken/alpha_projects/.claude/skills/|
+| alpha    | codex  | /home/cken/alpha_projects/.codex/skills/ |
 
 ## 执行步骤
 
 1. **遍历所有 skill 源**：
-   对 /home/cken/crypto_world/quant-workflows/skills/{shared,hft,crypto}/{claude,codex}/ 下的每个子目录（即每个 skill），记录其完整路径。
+   对 /home/cken/crypto_world/quant-workflows/skills/{shared,hft,crypto,alpha}/{claude,codex}/ 下的每个子目录（即每个 skill），记录其完整路径。
 
 2. **检查目标软链接**：
    对每个 skill，根据上面的映射规则计算应有的软链接路径。
@@ -56,7 +58,7 @@ prompt 中包含完整的同步逻辑（见下方模板）。
    - 如果目标位置有同名文件/目录但不是指向该 skill 的软链接 → **报告冲突**，不覆盖
 
 3. **检查孤立软链接**：
-   对每个目标目录（6 个），列出所有软链接，检查是否：
+   对每个目标目录（8 个），列出所有软链接，检查是否：
    - 指向 quant-workflows/skills/ 内
    - 目标路径仍然存在
    - 如果指向的源已不存在 → **报告孤立**，不自动删除
