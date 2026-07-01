@@ -1,4 +1,4 @@
 interface:
   display_name: "Crypto Deep Factor Research"
   short_description: "Crypto 深度因子研究：Trade/OB 观察 -> AmountBar 因子设计 -> 主口径验证"
-  default_prompt: "Use $crypto-deep-factor-research to run the Claude-equivalent crypto deep factor research workflow from Phase 0 to Phase 4 starting from a seed idea. If subagents are explicitly authorized, keep Reviewer, Compliance Monitor, and Logger persistent, route independent consultation through a fresh consultant subagent, and default migrated Codex subagents to model gpt-5.4 with reasoning xhigh."
+  default_prompt: "Use $crypto-deep-factor-research to run the Codex crypto deep factor research workflow from Phase 0 to Phase 4 starting from a seed idea. If subagents are explicitly authorized, keep Reviewer, Compliance Monitor, and Logger persistent, route independent consultation through a fresh consultant subagent, and default migrated Codex subagents to model gpt-5.4 with reasoning xhigh."

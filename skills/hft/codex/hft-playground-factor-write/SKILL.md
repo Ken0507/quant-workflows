@@ -1,7 +1,23 @@
 ---
 name: hft-playground-factor-write
-description: 当用户要用 Playground 编写/新增/修改 Agent 因子（编辑 src/*.hpp / *_main.cpp，使用 MarketEvent + OrderBook + DataStore 输出 parquet，并按团队统一口径做 bar_last 采样落盘）时使用；开始写代码前必须先阅读 /home/cken/hft_projects/HftKnowledge/research_docs/factor_workflow.md 和 /home/cken/hft_projects/HftKnowledge/research_docs/data.md，并以文档口径为准。
+description: 当用户要用 Playground 编写/新增/修改【recon 族因子】——基于 ORDER/TRADE 事件 + 由逐笔重构的 OrderBook（GetOrderBook）的因子（编辑 src/*.hpp / *_main.cpp，DataStore 输出 parquet，按团队统一口径做 bar_aggtrans_1 的 bar_last 采样落盘）时使用；开始写代码前必须先阅读 /home/cken/hft_projects/HftKnowledge/research_docs/factor_workflow.md 和 data.md，并以文档口径为准。**若写的是纯快照(L2 snapshot)因子，请改用 `hft-playground-snap-factor-write`。**
 ---
+
+# HFT Playground 写因子（recon 族：ORDER/TRADE + 重构 OrderBook）
+
+## 适用范围 / 与 snap 因子的区分（务必先判断归属）
+
+本 skill 专用于 **recon 族因子**：数据源是 **order/transaction 逐笔事件 + 由其重构的全深度 `OrderBook`**（`Context::GetOrderBook(code)`）。
+团队的因子分**两族、天生不合并**（issue #173），写第一行代码前先确认你写的是哪一族：
+
+| | **recon 族（本 skill）** | **snap 族（用 `hft-playground-snap-factor-write`）** |
+|---|---|---|
+| 数据源 | order/trade 重构的 `OrderBook` | 交易所 L2 快照 `SnapBook`（`Context::GetSnap(code)`） |
+| 深度 | 全深度 + 队列/订单流 | 仅 top-10，无队列/订单流 |
+| 采样轴 | `bar_aggtrans_time_1`（成交驱动 bar），`md_id=biz_index` | 每帧快照一行，`(code, snap_ts)`，**无 biz_index** |
+| 典型因子 | 深度金额累计、排队位置、撤单强度、bar 内统计 | snap-to-snap 变化量、当前帧 imbalance/spread/microprice |
+
+两族**分开训练、不 merge**；选源在模型/业务侧做。**本 skill 只处理 ORDER/TRADE，禁止写 SNAPSHOT 分支**（snap 事件交给 snap 族 skill）。
 
 # HFT Playground 写因子（Agent 因子开发范式）
 

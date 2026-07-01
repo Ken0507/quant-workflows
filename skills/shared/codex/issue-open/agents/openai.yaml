@@ -1,4 +1,4 @@
 interface:
   display_name: "Issue Open"
-  short_description: "Create a structured hft-sdk-issues issue for the current topic"
-  default_prompt: "Use $issue-open to open a structured hft-sdk-issues discussion/design issue for the current topic. Summarize the current context in the main thread, then delegate the actual gh search and issue drafting/creation to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."
+  short_description: "Create a structured GitHub issue in the target repo for the current topic"
+  default_prompt: "Use $issue-open to open a structured discussion/design issue in the target GitHub repo. Resolve the repo in the main thread, summarize the current context, then delegate the gh search and issue drafting/creation to a fresh Codex subagent using model gpt-5.4 with reasoning xhigh."

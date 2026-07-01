@@ -494,6 +494,8 @@ while True:
 
 **主预测口径**：`ret_lag0_next100` ~ `ret_lag0_next200`（AmountBar 时间轴）。拓展观察到 `ret_lag0_next800`。因子设计应匹配此 horizon，但研究阶段要理解市场本质，不要过度拟合。
 
+> **Label basis (issue #119, 2026-04-19 之后)**：`ret_lag0_nextH` 的底层价格口径是 **mid-to-mid**（`mid[t+H] / mid[t] - 1`），mid 来自 `basic_table` 的 `mid` 列。列名保持 `ret_lag0_nextH` 不变，但语义已从 close-to-close 切换为 mid-to-mid。forward_returns MCP 工具同样走该口径。Phase 1 的定性观察（forward return 在哪个 horizon 最强 / 衰减形态）都应基于 mid-based label 理解，不要再凭记忆假设是 close-to-close。
+
 **AmountBar 参数**：动态阈值（daily_thres_28800），每天约 28800 根 bar。使用 `compute_bars()` 工具时不指定 threshold 即使用默认动态阈值。
 
 ---
@@ -585,3 +587,12 @@ while True:
 4. 确保 research_log.md 中所有已执行的调查轮次都有 `[REVIEWER R{N}]` 标记
 
 这样后续可以恢复研究而非从零重来。用户可以将 `[INTERRUPTED]` 标记作为检索入口来决定是否继续。
+
+---
+
+## 8. Changes after issue #119 (2026-04-19)
+
+- **主预测口径 label basis 切换为 mid-to-mid**：`ret_lag0_nextH` 列名不变，但底层由 `basic_table.mid` 计算（`mid[t+H]/mid[t]-1`）。close-to-close 路径已被 analyzer / forward_returns 硬下线。
+- **Phase 3 主口径验证**的 IC profile / horizon 形态观察统一基于 mid-based label，不再参考任何历史的 close-to-close IC 数字作为对照基准。
+- **Phase 2 小样本 IC、大样本泛化**使用的 forward return 工具口径已是 mid-to-mid，不需要额外参数切换。
+- 研究报告中若引用到 "ret_lag0_nextH" 的具体数值，应在 factor_definition.md 的"特征说明"里明确注明"label basis = mid-to-mid（basic_table）"，避免后续读者误解。
