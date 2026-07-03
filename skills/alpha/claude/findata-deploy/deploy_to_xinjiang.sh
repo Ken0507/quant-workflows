@@ -148,6 +148,25 @@ fi
 "$PUBENV/bin/python" -m pip install --no-index --no-deps --force-reinstall "$TMP"/*.whl
 "$PUBENV/bin/python" -m pip check
 
+# 4.6) 集中 DSN（findata#50）：把部署者的 DSN 写进已安装包 findata/_secrets.py
+#   —— 不入 git（仓内 .gitignore）、部署时发布、后续可 .so 化。使用方（hftprop 组）conda
+#   activate 后免各自配 DSN 即可真实取数（config._mysql_dsn 环境变量优先、缺省回落本文件）。
+#   DSN 从部署者登录 env 解析（bash -lc，兼容 ~/.bashrc/.bash_profile），经 stdin 传入避免
+#   ps 暴露，Python repr 安全转义写入。⚠️ 明文凭据、组只读(640/hftprop)：组内成员（lgj）可读，
+#   当前机器上现成 DSN = 部署者个人账号；正式方案换专用共享账号 + .so，见 #50。
+DSN="$(bash -lc 'printf %s "${FINDATA_MYSQL_DSN:-}"')"
+if [[ -n "$DSN" ]]; then
+  SITE="$("$PUBENV/bin/python" -c 'import findata, os; print(os.path.dirname(findata.__file__))')"
+  printf '%s' "$DSN" | "$PUBENV/bin/python" -c \
+    'import sys; open(sys.argv[1],"w").write("# findata#50 集中 DSN：部署时发布，勿手改/勿入 git\nMYSQL_DSN = %r\n" % sys.stdin.read())' \
+    "$SITE/_secrets.py"
+  chgrp hftprop "$SITE/_secrets.py" 2>/dev/null || true
+  chmod 640 "$SITE/_secrets.py"
+  echo "  集中 DSN 已写入 $SITE/_secrets.py（640 / hftprop 组只读，findata#50）"
+else
+  echo "  ⚠ 部署者 env 无 FINDATA_MYSQL_DSN：跳过集中 DSN 写入（使用方需各自配 env）" >&2
+fi
+
 # 5) 锁定本次发布的完整环境快照 + 发布台账
 "$PUBENV/bin/python" -m pip freeze > "$WHEELHOUSE/constraints-$TAG.txt"
 echo "$STAMP  findata $TAG  cube@$CUBE_REV" >> "$WHEELHOUSE/RELEASES.log"
@@ -166,6 +185,22 @@ print("smoke: catalog", findata.catalog().shape)
 c = findata.stock_quote(20240102, 20240105, field="close", rtype="fdf")   # v0.3.0: narrow/wide→stack_df/fdf (findata#17)
 print("smoke: stock_quote(mock)", c.shape)
 PY
+
+# 7.5) 集中 DSN 验证（findata#50）：**清空** env FINDATA_MYSQL_DSN，findata 应从 _secrets 回落
+#   拿到真实库并取到数——即使用方（lgj）conda activate 后免配 DSN 的真实场景。缺 _secrets 则跳过。
+if [[ -n "$DSN" ]]; then
+  cd /tmp
+  env -u FINDATA_CUBE_PATH -u PYTHONPATH -u FINDATA_MYSQL_DSN \
+      FINDATA_DATA_ROOT=/data/findata FINDATA_UNIVERSE_ROOT=/data/hftprop/research_data/universe \
+      "$PUBENV/bin/python" - <<'PY'
+import findata
+from findata.config import config
+assert config.get("mysql_dsn"), "✗ 集中 DSN 未生效：env 清空后 config['mysql_dsn'] 仍为空"
+df = findata.market_cap(20240102, 20240105, code="000001.SZ")
+assert getattr(df, "shape", (0,))[0] > 0, "✗ 集中 DSN 取数为空"
+print(f"smoke(集中DSN, env已清空): market_cap {df.shape} —— 使用方免配 DSN 可真实取数 ✓")
+PY
+fi
 echo "--- 发版完成：$TAG 已装入 $PUBENV ---"
 REMOTE
 fi
