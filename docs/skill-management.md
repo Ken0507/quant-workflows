@@ -170,7 +170,7 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 
 ## Current Skill Inventory (snapshot)
 
-### shared / claude (7)
+### shared / claude (6)
 
 - `hft-sdk-issue-submit`
 - `issue-conclusion`
@@ -178,7 +178,8 @@ The `skills/shared/codex/claude-to-codex-skill-migration/` skill documents this 
 - `issue-search`
 - `issue-update`
 - `sync-skills`
-- `write-research-log`
+
+> `memory-guard` / `write-research-log` / `session-loose-ends` 已迁至 ae-fin-platform `skills/shared/ae-*`(去项目化,研究员共享);本机个人使用经 `~/.claude/skills/ae-*` 软链指向平台仓。codex 侧副本保留见下。
 
 ### shared / codex (10)
 
