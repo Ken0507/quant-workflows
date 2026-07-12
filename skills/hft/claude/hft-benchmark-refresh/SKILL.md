@@ -274,8 +274,8 @@ Phase 3 (Top {N}):
 1. 运行 /hft-meta-review 把本次 Refresh 写入 sota_snapshot
    /hft-meta-review {date}
 
-2. （可选）跑 SignalReplay 回测验证 Layer 2 改善
-   /hft-playground-signalreplay-backtest
+2. （可选）验证 Layer 2 改善：相对比较可用 /hft-playground-signalreplay-backtest；
+   **绝对 PnL 必须用 trader 信号注入**（--inject_signal_pack_dir，#179 定稿口径）
 
 3. （可选）触发下一轮 deep-factor-research 用新 benchmark 作为对照
 ```
@@ -349,7 +349,7 @@ Phase 3 (Top {N}):
 
 - **`/hft-meta-review`**：本 skill 完成后，用户应立即跑一次 meta-review 把新 benchmark 写进 sota_snapshot。meta-review 在 §2.5 子扫描中会自动检测 `pool/benchmark*/` 新目录
 - **`/hft-realize-factor`**：本 skill 假设所有 dataset 已经 realize 完毕（factor_pool/debug/fa{N}/.../parquet 已存在）。如果某个 FA 还没刷完全历史，本 skill 在 `discover_signals` 阶段会失败，应先跑 realize
-- **`/hft-playground-signalreplay-backtest`**：Refresh 完成后，可用新 LGBM 模型导出信号做回测验证 Layer 2 改善。但本 skill 不主动触发回测——是否做 Layer 2 验证由用户决定
+- **Layer 2 验证**：Refresh 完成后可用新 LGBM 模型导出 SignalPack 做回测。**绝对 PnL 用 trader 信号注入**（`run_baseline_150_trader --inject_signal_pack_dir`，#179 定稿口径）；`/hft-playground-signalreplay-backtest` 仅限信号相对比较。本 skill 不主动触发回测——是否做由用户决定
 - **`/hft-deep-factor-research`**：后续的新研究都应以新 benchmark 为对照基线（target_and_workflow.md §2 Stage R 的"回灌"逻辑）
 
 ---

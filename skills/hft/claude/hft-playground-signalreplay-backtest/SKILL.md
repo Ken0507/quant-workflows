@@ -1,13 +1,20 @@
 ---
 name: hft-playground-signalreplay-backtest
-description: 使用 Playground 的 batch-backtest 调用 HftAnalyzer2 的 SignalReplay 策略，将 Analyzer2 导出的 SignalPack（bar_ffill 或 tick_predict）进行信号回放回测，并产出 report.md / metrics.csv / dashboard.png 等回测报告与撮合日志。适用于研究员/研究流程中需要“按指定 signal_pack_dir + 日期区间 + universe=bond_sz（全市场）”批量回测、做参数扫参、或复跑基线回测的场景。必须严格以 /home/cken/hft_projects/HftAnalyzer2/docs/howto_playground_backtest_signalreplay_zh.md 为唯一口径并按其流程执行（如与本 Skill 冲突，以文档为准）。
+description: 使用 Playground 的 batch-backtest 调用 HftAnalyzer2 的 SignalReplay 策略，将 Analyzer2 导出的 SignalPack（bar_ffill 或 tick_predict）进行信号回放回测。⚠️ 仅限**信号相对比较**（同引擎比较多个信号强弱）；**绝对 PnL 结论一律禁止用本 skill**——必须改用 live_v2 trader 的信号注入模式（--inject_signal_pack_dir，见 #179），且 HftAnalyzer2 v20260712.1 之前的所有 SignalReplay 结果因堆仓 bug 作废。必须严格以 /home/cken/hft_projects/HftAnalyzer2/docs/howto_playground_backtest_signalreplay_zh.md 为唯一口径并按其流程执行（如与本 Skill 冲突，以文档为准）。
 ---
 
 # Playground + SignalReplay：批量回测（按文档执行）
 
+## ⚠️ 适用范围红线（2026-07-12，#179 定稿）
+
+- **本 skill 的产出只允许用于"信号相对比较"**（同一引擎下比较多个信号/多组参数的相对强弱）。**任何绝对 PnL / 赚不赚钱的结论禁止引用本 skill 的数字**——SignalReplay 是简化执行层，实测比生产 trader 系统性乐观（缺 BE 平仓、撤单龄、退出 reprice 等机制）。
+- 绝对 PnL 评估的唯一合法仪器：**live_v2 trader 信号注入模式**（`run_baseline_150_trader --inject_signal_pack_dir <pack>`，HFTPool commit e68320a；执行语义 = #171 实盘对账验证过的生产机器）。
+- **HftAnalyzer2 v20260712.1 之前的所有 SignalReplay 历史结果作废**（堆仓 bug：单 code 持仓可叠数百张）。引用任何历史回测前先核对版本。
+- 任何新回放/策略 agent 的数字被引用前，必须通过 howto §6.7 的"同信号双引擎对照"验收。
+
 ## 强制原则（必须遵守）
 
-1) 执行任何命令前，先打开并通读文档：`/home/cken/hft_projects/HftAnalyzer2/docs/howto_playground_backtest_signalreplay_zh.md`  
+1) 执行任何命令前，先打开并通读文档：`/home/cken/hft_projects/HftAnalyzer2/docs/howto_playground_backtest_signalreplay_zh.md`（重点 §6.6 仓位语义 / §6.7 验收纪律）  
 2) 本 Skill 只提供“操作框架/检查清单”；若与文档口径不一致，以文档为准并同步更新本 Skill  
 3) 所有回测产物输出到**新目录**（避免覆盖既有回测结果）  
 4) 每次实验记录 UTC+8 时间戳（建议写到研究目录 `research_log.md`）  

@@ -20,6 +20,14 @@ metadata:
 - `baseline_150_trader_dual` 也是 DualRunner，但确认是新 build 才可用（交易机上那份是 2026-03-11 旧 build，缺 `exit_sell_discount_bps`）。
 - `playground remote-backtest <target>` 的 target 只能指 DualRunner 二进制，不能指 baseline 的 `_online`。
 
+## ⚠️ 2026-07-09 更新（#171 对账定稿，cken 拍板）：对齐/研究回测默认双轨 exchange_ts
+
+- **撮合模式**：对齐管线与研究回测**默认加 `--matcher_time_mode exchange_ts`**（#171 双轨）。依据：一个月 live vs sim 对账（26 交易日）双轨日度净利 corr 0.84、符号一致 88%、偏保守 1.28×；旧 local_ts 模式假盈利（符号相反、开盘 sim 独有成交 26.2%、成交价乐观 +13bps）。仅在需要与历史旧模式产物对拍时才用 local_ts。
+- **baseline_150 二进制**：用 `live_v2/build_issue171/run_baseline_150_trader`（已接 matcher_time_mode flags；`build/` 下旧二进制未接 flags 只能跑旧模式）。
+- **运行时 lib**：`/data/share/dev/hft/lib` 自 2026-06 更新为 GLIBC_2.34 构建，**EL8 工作站加载会失败**；改用 `export LD_LIBRARY_PATH=/data/db/hft/temp/issue171/sdk_stage/lib`（EL8 兼容，已对拍验证经济结果与旧 release lib 逐位一致）。
+- 已知：sdk_stage lib 下 TRADE 行 exchange_ts 打戳语义与旧 release lib 不同（最大差 ~15s，经济结果不变）——时间分析用 local_ts 轴。
+- 参照实现：`HFTPool/tasks/daily_report/cken_daily_report.sh`（已切双轨）与 `hft_researches/issue171_live_sim_align_20260709/run_sim_batch_dualts.sh`。
+
 ## Prerequisites
 
 1. SDK 环境（每个新 shell）：
@@ -80,8 +88,9 @@ grep -E "Using Parquet loader|balance=10000000" "$LOG_FILE"
 ## 与其他回测 skill 的分工
 
 - 本 skill：**本机、策略二进制级**回测（live 策略行为复现 / SDK fix 验证 / 日报 sim 侧）。
+- **信号注入模式（#179 新增，评估任意外部信号的绝对 PnL 的唯一合法口径）**：`run_baseline_150_trader --inject_signal_pack_dir <SignalPack目录>`——因子管线/bar 时序/全部生产执行机制原样，仅用 pack 分数覆盖 score_bps（HFTPool commit e68320a；online/dual 入口硬拒该 flag）。pack schema：code/exchange_ts/md_id/score_bps[/is_valid]，按 bar close 事件 keyed。
 - `/hft-remote-backtest`：交易机上 DualRunner 回测（需要生产参数或交易机独有数据时）。
-- `/hft-playground-signalreplay-backtest`：Analyzer2 SignalPack 信号回放（因子/信号研究）。
+- `/hft-playground-signalreplay-backtest`：Analyzer2 SignalPack 信号回放——**仅限信号相对比较，绝对 PnL 禁用**（简化执行层系统性乐观，#179 定稿）。
 
 ## 背景
 

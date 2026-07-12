@@ -144,7 +144,9 @@
 
 ### 1.3 SOTA 回测结果
 
-> **范围说明**：依据 §1 §1.2 §3 的范围声明，本 snapshot **不维护回测层指标**。Layer 2（SignalReplay 回测）由 `/hft-playground-signalreplay-backtest` 独立产出；Layer 3（实盘）由 `daily_trading_report` + 交易机 Session CSV 维护。
+> **范围说明**：依据 §1 §1.2 §3 的范围声明，本 snapshot **不维护回测层指标**。Layer 2 回测的合法口径（2026-07-12 #179 定稿）：**绝对 PnL 用 live_v2 trader 信号注入**（`--inject_signal_pack_dir`，执行语义经 #171 实盘对账验证）；`/hft-playground-signalreplay-backtest` 仅限信号相对比较（其 v20260712.1 前历史结果因堆仓 bug 全部作废）。Layer 3（实盘）由 `daily_trading_report` + 交易机 Session CSV 维护。
+>
+> ⚠️ **Layer 2 已知事实（2026-07-12）**：当前 SOTA（benchmark0323_top100）在真实执行语义下 2026Q2 开盘/全天均为负（−742/日 开盘，0/56 正日，hft-sdk-issues #179）——Layer 1 rankIC 真实但不足以过执行成本线。此前"开盘 5 分钟唯一真钱"等结论作废。
 >
 > 如未来希望把回测 SOTA 也纳入本 snapshot，需先扩展 target_and_workflow.md §1.1 的 SOTA 范围声明。
 
