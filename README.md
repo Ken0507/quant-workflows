@@ -56,12 +56,14 @@ Editing a `SKILL.md` in this repo automatically updates every consumer (Claude C
 
 ## Current Skill Inventory
 
+> **2026-07-14 迁移公告**：HFT 侧 **Claude** skills（原 `skills/hft/claude/` 全部 19 个）与 shared 的 issue 四件套 Claude 版（issue-open / issue-update / issue-search / issue-conclusion）已收口迁移到 [hft-prop/ae-fin-platform](https://github.com/hft-prop/ae-fin-platform)（[#11](https://github.com/hft-prop/ae-fin-platform/issues/11)），并重命名为 `aef-hft-*` / `ae-issue-*`；本仓对应 Claude 目录已删除。**Codex 版本不受影响，仍留在本仓**（`skills/hft/codex/`、`skills/shared/codex/`）。
+
 | Category   | Claude | Codex | Total |
 |------------|-------:|------:|------:|
-| shared     |      7 |    10 |    17 |
-| hft        |     14 |     7 |    21 |
-| crypto     |      8 |     1 |     9 |
-| **Total**  | **29** |**18** |**47** |
+| shared     |      4 |    15 |    19 |
+| hft        |      0 |    20 |    20 |
+| crypto     |      9 |     9 |    18 |
+| **Total**  | **13** |**44** |**57** |
 
 Codex coverage still lags Claude (this is expected — Codex skills are being backfilled from the Claude versions one by one; see `skills/shared/codex/claude-to-codex-skill-migration/`).
 
