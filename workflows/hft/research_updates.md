@@ -6,7 +6,7 @@
 >
 > **结构**：两层。本文件是索引 + 每期中等篇幅总结；每期的 ad-hoc 课题报告副本 + 可选深度分析放在 `updates/{yyyymmdd}_update/` 子目录。
 >
-> **维护方式**：由 `/hft-meta-review` skill 在用户确认后追加新条目 + 创建对应子目录。**agent 不得修改历史条目**，只能追加新条目和补充当前期子目录。
+> **维护方式**：由 `/aef-hft-meta-review` skill 在用户确认后追加新条目 + 创建对应子目录。**agent 不得修改历史条目**，只能追加新条目和补充当前期子目录。
 
 ---
 
@@ -292,7 +292,7 @@ skill 在 Step 4 询问用户时，应列出候选报告让用户勾选保留哪
 
 ### 6. 本期观察到的模式 / 待关注方向
 
-1. **Refresh #1 触发条件已满足，立即触发**：累计 171 个 post-Refresh #0 新因子（FA26/27/28），建议下一步直接跑 `/hft-benchmark-refresh` 启动。**Refresh #1 必须**：
+1. **Refresh #1 触发条件已满足，立即触发**：累计 171 个 post-Refresh #0 新因子（FA26/27/28），建议下一步直接跑 `/aef-hft-benchmark-refresh` 启动。**Refresh #1 必须**：
    - 沿用 benchmark0323 的 LGBM cfg 严格可比
    - 默认 Top 100（与 0323 一致）
    - 使用 saved_model 物理拷贝规则（新 skill 强制）
@@ -318,7 +318,7 @@ skill 在 Step 4 询问用户时，应列出候选报告让用户勾选保留哪
 
 > 本期未触发定向深度分析（Bootstrap 以全量追认 + SOTA 基线锚定 + LGBM 重跑修复为主）。
 >
-> 后续如需定向分析可另 `/hft-meta-review "<direction>"` 触发，例如：
-> - `/hft-meta-review "Refresh #1 decision"` — 评估是否触发 Refresh #1 + 应包含哪些 FA
-> - `/hft-meta-review "FA12 FA21 FA23 命名前缀清理"` — 命名归因实验
-> - `/hft-meta-review "ob_research 编号清理"` — 重复/缺号 session 处理建议
+> 后续如需定向分析可另 `/aef-hft-meta-review "<direction>"` 触发，例如：
+> - `/aef-hft-meta-review "Refresh #1 decision"` — 评估是否触发 Refresh #1 + 应包含哪些 FA
+> - `/aef-hft-meta-review "FA12 FA21 FA23 命名前缀清理"` — 命名归因实验
+> - `/aef-hft-meta-review "ob_research 编号清理"` — 重复/缺号 session 处理建议

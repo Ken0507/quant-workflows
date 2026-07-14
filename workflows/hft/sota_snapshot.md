@@ -6,7 +6,7 @@
 >
 > **语义**：本文件只反映 **current**（最新 benchmark refresh 后的真相），不维护历史最佳。历史进程请查 `sota_archive/` 归档 + `research_updates.md` changelog。
 >
-> **维护方式**：由 `/hft-meta-review` skill 在用户确认后覆盖。**agent 不得擅自修改**。每次覆盖前先归档旧版到 `sota_archive/sota_snapshot_{old_date}.md`。
+> **维护方式**：由 `/aef-hft-meta-review` skill 在用户确认后覆盖。**agent 不得擅自修改**。每次覆盖前先归档旧版到 `sota_archive/sota_snapshot_{old_date}.md`。
 
 ---
 
@@ -144,7 +144,7 @@
 
 ### 1.3 SOTA 回测结果
 
-> **范围说明**：依据 §1 §1.2 §3 的范围声明，本 snapshot **不维护回测层指标**。Layer 2 回测的合法口径（2026-07-12 #179 定稿）：**绝对 PnL 用 live_v2 trader 信号注入**（`--inject_signal_pack_dir`，执行语义经 #171 实盘对账验证）；`/hft-playground-signalreplay-backtest` 仅限信号相对比较（其 v20260712.1 前历史结果因堆仓 bug 全部作废）。Layer 3（实盘）由 `daily_trading_report` + 交易机 Session CSV 维护。
+> **范围说明**：依据 §1 §1.2 §3 的范围声明，本 snapshot **不维护回测层指标**。Layer 2 回测的合法口径（2026-07-12 #179 定稿）：**绝对 PnL 用 live_v2 trader 信号注入**（`--inject_signal_pack_dir`，执行语义经 #171 实盘对账验证）；`/aef-hft-playground-signalreplay-backtest` 仅限信号相对比较（其 v20260712.1 前历史结果因堆仓 bug 全部作废）。Layer 3（实盘）由 `daily_trading_report` + 交易机 Session CSV 维护。
 >
 > ⚠️ **Layer 2 已知事实（2026-07-12）**：当前 SOTA（benchmark0323_top100）在真实执行语义下 2026Q2 开盘/全天均为负（−742/日 开盘，0/56 正日，hft-sdk-issues #179）——Layer 1 rankIC 真实但不足以过执行成本线。此前"开盘 5 分钟唯一真钱"等结论作废。
 >
@@ -175,7 +175,7 @@
 
 ## §3 开放研究方向 / 待关注模式
 
-1. **触发 Refresh #1 是当前 SOTA 决策最大节点**（**立即触发**）：FA26 / FA27 / FA28 三组共 ~171 个因子已 post-Refresh #0 累积，FA28 的 merged 评估显示 LGBM gain 占比 6.33%（机制独立但单因子弱）。**Refresh #1 建议范围**：`baseline_150_new + FA12 + FA15? + FA16 + FA20-28`，重选 LGBM gain Top 100（或 Top 150）。Refresh #1 落地后，新 SOTA 模型应在 valid 28 天上的 LGBM RankIC 超越当前 0.1123 才算"真 refresh"。**由 `/hft-benchmark-refresh` skill 启动；新 skill 已强制物理拷贝 saved_model 防止再次丢失**
+1. **触发 Refresh #1 是当前 SOTA 决策最大节点**（**立即触发**）：FA26 / FA27 / FA28 三组共 ~171 个因子已 post-Refresh #0 累积，FA28 的 merged 评估显示 LGBM gain 占比 6.33%（机制独立但单因子弱）。**Refresh #1 建议范围**：`baseline_150_new + FA12 + FA15? + FA16 + FA20-28`，重选 LGBM gain Top 100（或 Top 150）。Refresh #1 落地后，新 SOTA 模型应在 valid 28 天上的 LGBM RankIC 超越当前 0.1123 才算"真 refresh"。**由 `/aef-hft-benchmark-refresh` skill 启动；新 skill 已强制物理拷贝 saved_model 防止再次丢失**
 
 2. **FA15 历史遗留**（已澄清）：FA15 已 realize（35 因子）但被 benchmark0323 跳过。归因：quality_review CONDITIONAL（merged gain 1.75%，evaluator h20 不匹配 — 因子主优势 horizon 在 h100+）。其 B 组（价格整数偏好）和 G 组（联合整数）在 next200 RankIC 0.022-0.033。**建议 Refresh #1 中尝试纳入 FA15 评估**（horizon 已切到 next100 主口径，可能仍边际，但值得验证；该结论由本期 Bootstrap meta-review 闭环）
 
@@ -183,7 +183,7 @@
 
 4. **FA12 / FA21 / FA23 命名前缀混乱**：FA12 在 SOTA 模型 top100 中无 fa12_ 前缀信号（虽然 DATASETS_DEF 列出），FA21 信号名为 `ac*/buy_*/cancel_*/chase_*`（无 fa21_ 前缀），FA23 信号名为 `ed2_/ga_/...`。这会让"哪个 FA 贡献了哪些因子"的归因变模糊。**2026-05-25 重跑时发现 FA12 factor_pool/debug/cken/fa12_factor_v1 已不在 disk**（仅在 cache 中以列形式残留）。建议在 Refresh #1 之前做一次"前缀清理"实验（重命名 / 加 metadata）
 
-5. **数据持久化策略已固化**（本期 Bootstrap 闭环）：`/data/db/hft/analyzer2/` 和 `/data/db/hft/model_output/` 都是临时缓存，可能被清理。已更新 `hft-analyzer2-standard-report` 和 `hft-benchmark-refresh` skill SKILL.md，**强制**所有报告 + LGBM 模型 + IC parquet + feature_importance 都用 `cp -L` 物理拷贝到 HFTPool。**禁止** symlink。豁免：cache/ 和 memmap/ 可留在 /data/。**Refresh #1 必须遵守此规则**
+5. **数据持久化策略已固化**（本期 Bootstrap 闭环）：`/data/db/hft/analyzer2/` 和 `/data/db/hft/model_output/` 都是临时缓存，可能被清理。已更新 `aef-hft-analyzer2-standard-report` 和 `aef-hft-benchmark-refresh` skill SKILL.md，**强制**所有报告 + LGBM 模型 + IC parquet + feature_importance 都用 `cp -L` 物理拷贝到 HFTPool。**禁止** symlink。豁免：cache/ 和 memmap/ 可留在 /data/。**Refresh #1 必须遵守此规则**
 
 6. **Session 编号清理**（低优先）：#11 / #76 都是"两个同号但内容不同的 session"（4 个目录都完成了 factor_definition.md），#70 缺号。**建议保持现状**，因为重新编号会破坏 git history 和已有 FA factor_list 中的"来源研究"引用
 
@@ -195,7 +195,7 @@
 
 ## §4 本版 snapshot 生成说明
 
-- **生成来源**：首次 Bootstrap（手工初始化 + 本期 `/hft-meta-review` Bootstrap 运行），由用户在 2026-05-25 与 agent 协作建立
+- **生成来源**：首次 Bootstrap（手工初始化 + 本期 `/aef-hft-meta-review` Bootstrap 运行），由用户在 2026-05-25 与 agent 协作建立
 - **本期 update 子目录**：`updates/20260525_update/`（含 55 份 ad-hoc 课题报告物理副本）
 - **归档**：本期是首次 Bootstrap，归档了 sota_snapshot 的初始化版本到 `sota_archive/sota_snapshot_2026-05-25_bootstrap.md`
 - **完整 meta-review 报告**：`reviews/meta_review_2026-05-25.md`

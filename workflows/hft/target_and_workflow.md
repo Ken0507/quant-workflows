@@ -13,7 +13,7 @@
 把 LGBM 融合后的**预测信号**逐层推进到实盘可上线：
 
 - **Layer 1 — LGBM 信号质量**：在 valid / holdout 上保持稳定、显著的 IC / ICIR（超越当前 benchmark0323_top100，且 ICIR 不能靠单日异常值撑起）。**sota_snapshot.md 严格只追踪到这一层。**
-- **Layer 2 — SignalReplay 回测可稳定盈利**：通过 `/hft-playground-signalreplay-backtest`，从 LGBM 信号导出到回测能拿到稳定的夏普、可控的回撤、合理的换手率。
+- **Layer 2 — SignalReplay 回测可稳定盈利**：通过 `/aef-hft-playground-signalreplay-backtest`，从 LGBM 信号导出到回测能拿到稳定的夏普、可控的回撤、合理的换手率。
 - **Layer 3 — 实盘可上线**：通过 `cken_benchmark0323_v0` / Benchmark100Trader 等实盘策略在交易机上拿到可观察的 PnL，验证从信号到撮合的完整链路。
 
 不设时间重心、不预先规划方向家族——任何能提高 LGBM 预测信号质量的因子都欢迎。
@@ -22,7 +22,7 @@
 
 ### 1.2 单因子研究（deep-factor-research）子目标
 
-在单次 `/hft-deep-factor-research` session 中，目标是**挖掘尽可能多、尽可能高质量**的、对 **bar 级 next100 horizon** 有预测性的因子。预测性包括：
+在单次 `/aef-hft-deep-factor-research` session 中，目标是**挖掘尽可能多、尽可能高质量**的、对 **bar 级 next100 horizon** 有预测性的因子。预测性包括：
 
 - **线性预测性**：对主预测口径（`ret_lag0_next100`）有显著 IC
 - **非线性预测性**：线性 IC 不强但在 LGBM 中作为条件分裂特征有价值（stump ratio、conditional IC、与已有 baseline 的 LGBM 联合表现）
@@ -131,7 +131,7 @@ meta-review skill 按这些单位扫描 delta。
                                        ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage 1: 深度单因子研究                                              │
-│  Skill: /hft-deep-factor-research {seed}                             │
+│  Skill: /aef-hft-deep-factor-research {seed}                             │
 │                                                                      │
 │  目标: 尽可能多、尽可能高质量的 next100 bar 预测性因子                  │
 │        （线性 + 非线性预测性都要）                                     │
@@ -152,7 +152,7 @@ meta-review skill 按这些单位扫描 delta。
                                ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage 2: 因子集编译                                                  │
-│  Skill: /hft-factor-list-compile {范围|列表} -> FA{N}                 │
+│  Skill: /aef-hft-factor-list-compile {范围|列表} -> FA{N}                 │
 │                                                                      │
 │  输入: HFTPool/ob_research/{N1,N2,...}/factor_definition.md           │
 │  输出: HFTPool/factor_agent_docs/FA{N}_factor_list.md                 │
@@ -165,14 +165,14 @@ meta-review skill 按这些单位扫描 delta。
                                ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage 3: 工程落地                                                    │
-│  Skill: /hft-realize-factor {FA*_factor_list.md}                     │
+│  Skill: /aef-hft-realize-factor {FA*_factor_list.md}                     │
 │                                                                      │
 │  工作区: HFTPool/pool/FA{N}/                                          │
 │  子 Skill 调用:                                                       │
-│    hft-playground-factor-write       — C++ Agent 实现 + smoke test   │
-│    hft-axis-alignment-check          — bar 级 join key 对齐验证        │
-│    hft-playground-factor-batch-run   — 批量刷历史数据                  │
-│    hft-analyzer2-standard-report     — Analyzer2 标准报告              │
+│    aef-hft-playground-factor-write       — C++ Agent 实现 + smoke test   │
+│    aef-hft-axis-alignment-check          — bar 级 join key 对齐验证        │
+│    aef-hft-playground-factor-batch-run   — 批量刷历史数据                  │
+│    aef-hft-analyzer2-standard-report     — Analyzer2 标准报告              │
 │                                                                      │
 │  Step 1: 实现 + Code Review + Smoke Test                             │
 │  Step 2: 性能优化 + Perf Review                                      │
@@ -190,7 +190,7 @@ meta-review skill 按这些单位扫描 delta。
                                ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage 4: SignalReplay 回测 (Layer 2 验证)                            │
-│  Skill: /hft-playground-signalreplay-backtest                        │
+│  Skill: /aef-hft-playground-signalreplay-backtest                        │
 │                                                                      │
 │  从 Analyzer2 LGBM 模型导出 SignalPack (bar_ffill / tick_predict)     │
 │  → playground batch-backtest 回放                                    │
@@ -202,12 +202,12 @@ meta-review skill 按这些单位扫描 delta。
                                ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage 5: 实盘部署 (Layer 3 验证)                                      │
-│  Skill: /hft-live-strategy-deploy + /hft-intraday-trading-analysis    │
+│  Skill: /aef-hft-live-strategy-deploy + /aef-hft-intraday-trading-analysis    │
 │                                                                      │
 │  Playground deploy（Docker 编译 + SCP 上传交易机）                     │
 │  → 上传 prod_run/run.sh                                              │
 │  → 交易机 systemd / crontab 启动 Benchmark100Trader                  │
-│  → 盘中 /hft-intraday-trading-analysis 拉日志 + Session CSV           │
+│  → 盘中 /aef-hft-intraday-trading-analysis 拉日志 + Session CSV           │
 │  → 收盘 daily_trading_report                                         │
 │                                                                      │
 │  实盘红线: 见 HFTPool/CLAUDE.md "Strict Safety Rules"                 │
@@ -217,7 +217,7 @@ meta-review skill 按这些单位扫描 delta。
 
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Stage R: Benchmark 刷新（每隔 N 个 FA 跑一次）                        │
-│  Skill: /hft-benchmark-refresh {date} {datasets...}                  │
+│  Skill: /aef-hft-benchmark-refresh {date} {datasets...}                  │
 │                                                                      │
 │  触发: 每累计 2-3 个新 FA 落地后，由用户决定触发时机                    │
 │                                                                      │
@@ -251,7 +251,7 @@ meta-review skill 按这些单位扫描 delta。
 
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Meta Review (周期性自省)                                              │
-│  Skill: /hft-meta-review [direction]                                 │
+│  Skill: /aef-hft-meta-review [direction]                                 │
 │                                                                      │
 │  读取: target_and_workflow.md / sota_snapshot.md / research_updates.md│
 │  扫描: 自上次 update 以来新增的 session / FA / realize / analyzer /  │
@@ -266,19 +266,19 @@ meta-review skill 按这些单位扫描 delta。
 
 | Stage | Skill | 输入 | 输出 | 典型触发 |
 |-------|-------|------|------|---------|
-| 1 | `hft-deep-factor-research` | 种子想法 | `HFTPool/ob_research/{N}-{topic}/` | 用户给 idea |
-| 2 | `hft-factor-list-compile` | 研究编号范围/列表 | `HFTPool/factor_agent_docs/FA{N}_*.md` | 积攒 ≥3-6 个完成研究 |
-| 3 | `hft-realize-factor` | FA*_factor_list.md 路径 | `HFTPool/pool/FA{N}/` + analyzer 报告 | factor_list 编译通过后 |
-| 3.子 | `hft-playground-factor-write` | factor_list + 研究报告 | C++ Agent 代码 + smoke | realize 内部 |
-| 3.子 | `hft-playground-factor-batch-run` | 日期范围 + universe | factor parquet（全历史） | realize / 验证 |
-| 3.子 | `hft-axis-alignment-check` | 因子输出路径 | 对齐报告 | smoke 后 |
-| 3.子 | `hft-analyzer2-standard-report` | 因子数据路径 + 是否合并 baseline | Analyzer2 LGBM 报告 | 刷数完成后 |
-| 4 | `hft-playground-signalreplay-backtest` | Analyzer2 模型 / SignalPack | 回测报告 + metrics + dashboard | Layer 2 验证 |
-| 5 | `hft-live-strategy-deploy` | 策略 build + 交易参数 | 交易机上的实盘策略 | Layer 3 上线 |
-| 5 | `hft-intraday-trading-analysis` | 交易机 logs + session CSV | 盘中 PnL/延迟/Score 分析 | 交易时段 |
-| 5 | `hft-sync-market-data` | 日期范围 | 同步行情到本地 | 数据更新 |
-| R | `hft-benchmark-refresh` | baseline + 多 FA + Top N | 新 benchmark 目录 + LGBM + Top N 报告 | 每 2-3 个新 FA 后 |
-| Meta | `hft-meta-review` | direction (可选) | 阶段总结 + 更新建议 | 定期自省 |
+| 1 | `aef-hft-deep-factor-research` | 种子想法 | `HFTPool/ob_research/{N}-{topic}/` | 用户给 idea |
+| 2 | `aef-hft-factor-list-compile` | 研究编号范围/列表 | `HFTPool/factor_agent_docs/FA{N}_*.md` | 积攒 ≥3-6 个完成研究 |
+| 3 | `aef-hft-realize-factor` | FA*_factor_list.md 路径 | `HFTPool/pool/FA{N}/` + analyzer 报告 | factor_list 编译通过后 |
+| 3.子 | `aef-hft-playground-factor-write` | factor_list + 研究报告 | C++ Agent 代码 + smoke | realize 内部 |
+| 3.子 | `aef-hft-playground-factor-batch-run` | 日期范围 + universe | factor parquet（全历史） | realize / 验证 |
+| 3.子 | `aef-hft-axis-alignment-check` | 因子输出路径 | 对齐报告 | smoke 后 |
+| 3.子 | `aef-hft-analyzer2-standard-report` | 因子数据路径 + 是否合并 baseline | Analyzer2 LGBM 报告 | 刷数完成后 |
+| 4 | `aef-hft-playground-signalreplay-backtest` | Analyzer2 模型 / SignalPack | 回测报告 + metrics + dashboard | Layer 2 验证 |
+| 5 | `aef-hft-live-strategy-deploy` | 策略 build + 交易参数 | 交易机上的实盘策略 | Layer 3 上线 |
+| 5 | `aef-hft-intraday-trading-analysis` | 交易机 logs + session CSV | 盘中 PnL/延迟/Score 分析 | 交易时段 |
+| 5 | `aef-hft-sync-market-data` | 日期范围 | 同步行情到本地 | 数据更新 |
+| R | `aef-hft-benchmark-refresh` | baseline + 多 FA + Top N | 新 benchmark 目录 + LGBM + Top N 报告 | 每 2-3 个新 FA 后 |
+| Meta | `aef-hft-meta-review` | direction (可选) | 阶段总结 + 更新建议 | 定期自省 |
 
 ### 2.2 当前 benchmark 状态
 
@@ -296,12 +296,12 @@ meta-review skill 按这些单位扫描 delta。
 | 文件 | 定位 | 谁写 | 更新频率 |
 |------|------|------|---------|
 | **target_and_workflow.md** (本文件) | 目标 + 流程图（慢变） | 用户手工 | 结构性调整时 |
-| **sota_snapshot.md** | 当前最佳成果快照 + 当前 benchmark 指针（只到 Layer 1） | hft-meta-review skill 自动生成 | 每次 meta-review 确认后 |
-| **research_updates.md** | 时间序列 changelog | hft-meta-review skill 追加 | 每次 meta-review 确认后 |
-| **HFTPool/ob_research/{N}/** | 单次研究全过程记录 | hft-deep-factor-research skill | 每个 session |
-| **HFTPool/factor_agent_docs/FA*.md** | 编译后的标准化因子定义 | hft-factor-list-compile skill | 每次编译 |
-| **HFTPool/pool/FA*/** | 落地工程代码 + 分析报告 | hft-realize-factor skill | 每次实现 |
-| **HFTPool/pool/benchmark{YYYYMMDD}/** | 一代 benchmark 的快照 | hft-benchmark-refresh skill | 每次 refresh |
+| **sota_snapshot.md** | 当前最佳成果快照 + 当前 benchmark 指针（只到 Layer 1） | aef-hft-meta-review skill 自动生成 | 每次 meta-review 确认后 |
+| **research_updates.md** | 时间序列 changelog | aef-hft-meta-review skill 追加 | 每次 meta-review 确认后 |
+| **HFTPool/ob_research/{N}/** | 单次研究全过程记录 | aef-hft-deep-factor-research skill | 每个 session |
+| **HFTPool/factor_agent_docs/FA*.md** | 编译后的标准化因子定义 | aef-hft-factor-list-compile skill | 每次编译 |
+| **HFTPool/pool/FA*/** | 落地工程代码 + 分析报告 | aef-hft-realize-factor skill | 每次实现 |
+| **HFTPool/pool/benchmark{YYYYMMDD}/** | 一代 benchmark 的快照 | aef-hft-benchmark-refresh skill | 每次 refresh |
 | **HftKnowledge/research_docs/** | 数据/流程/Analyzer 权威手册 | 用户手工 | 工具升级时 |
 | **HFTPool/CLAUDE.md** | repo 级规则 + 数据墙 + 实盘红线 | 用户手工 | 规则变更时 |
 
@@ -311,13 +311,13 @@ meta-review skill 按这些单位扫描 delta。
 
 **允许的 skill 读写本目录**：
 
-- `hft-meta-review`：读本文件 + 读写 `sota_snapshot.md` + 追加 `research_updates.md`
-- `hft-benchmark-refresh`：触发新 benchmark 落盘到 `HFTPool/pool/benchmark{date}/`，**不动本目录**；只在下一次 meta-review 中被指针更新引用
+- `aef-hft-meta-review`：读本文件 + 读写 `sota_snapshot.md` + 追加 `research_updates.md`
+- `aef-hft-benchmark-refresh`：触发新 benchmark 落盘到 `HFTPool/pool/benchmark{date}/`，**不动本目录**；只在下一次 meta-review 中被指针更新引用
 - 所有其它 skill：只能**读**本文件（用于理解目标/流程），不得写
 
 **agent 行为守则**：
 
 - 运行任一 HFT 投研 skill 前，应先读本文件的 §1 确认任务对齐 Layer 1 目标
 - meta-review 产出的更新建议以 diff / 建议表形式呈现，由用户批准后才生效
-- benchmark 刷新由 `hft-benchmark-refresh` skill 执行，但触发时机由用户判断（agent 不主动决定）
+- benchmark 刷新由 `aef-hft-benchmark-refresh` skill 执行，但触发时机由用户判断（agent 不主动决定）
 - **实盘相关操作**：所有涉及交易机的修改（部署 / 重启 / 配置变更）必须经用户明确许可，遵守 `HFTPool/CLAUDE.md` 的 "Strict Safety Rules"
