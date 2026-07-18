@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Playground Factor Batch Run"
+  short_description: "Build, validate, and batch-run Playground factors into factor_pool"
+  default_prompt: "Use $hft-playground-factor-batch-run to batch-run a Playground factor project into factor_pool. Before any operation, read factor_workflow.md in full and confirm all required run parameters. Follow the hard-gated order: initialize the SDK environment, build, run a one-date one-code schema smoke test, pass $hft-axis-alignment-check on 3-5 full-universe dates at both 99.9% thresholds, then run the requested date range and validate every output date."

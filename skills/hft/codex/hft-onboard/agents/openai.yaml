@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Codex 上手安装"
+  short_description: "校验 HFT 研究环境并就地安装 Codex skills 与 OB MCP"
+  default_prompt: "使用 $hft-onboard 对 HFT SDK release 树、py311+mcp 和 bond_sz 数据根做校验，先询问 skills 与 MCP 安装目录，再非交互运行 onboard.sh，幂等安装 `.agents/skills` 并将通过 import 与 stdio initialize probe 的 server 语义合并到 `.codex/config.toml`；`--check` 只体检不写文件。"

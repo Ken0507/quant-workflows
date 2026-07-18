@@ -1,0 +1,4 @@
+interface:
+  display_name: "fund-qr 定版发布"
+  short_description: "预检并发布 fund-qr 版本、tag 与远端 commit"
+  default_prompt: "使用 $fund-qr-release 对 hft-prop/fund-qr 做正式发版；先强校验 main、干净工作区、远端同步与非空 CHANGELOG，版本号未指定时先与用户确认，再调用 scripts/release.sh；发布后衔接 $fund-qr-deploy release。"

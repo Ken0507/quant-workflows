@@ -1,0 +1,4 @@
+interface:
+  display_name: "SignalAnalyzer 新疆部署"
+  short_description: "将 SignalAnalyzer 以 dev 或 release 模式部署到新疆投研机"
+  default_prompt: "使用 $signalanalyzer-deploy 部署 SignalAnalyzer；默认 dev 模式同步源码并运行测试，release 模式必须先通过干净工作区、release tag、VERSION 和 findata/cube/signalmaker 前置校验，再构建 wheel、安装公共 py311 环境并 smoke。"

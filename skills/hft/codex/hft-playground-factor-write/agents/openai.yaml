@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Playground Recon Factor Write"
+  short_description: "Implement recon factors from order/trade events and rebuilt books"
+  default_prompt: "Use $hft-playground-factor-write only for recon-family Playground factors based on ORDER/TRADE events and Context::GetOrderBook. Before editing code, read factor_workflow.md and data.md in full, restate the hard schema, axis, bar-last sampling, and validation rules, and obtain the user's confirmation. Route pure L2 snapshot factors to $hft-playground-snap-factor-write, and preserve the required schema and axis-alignment gates."

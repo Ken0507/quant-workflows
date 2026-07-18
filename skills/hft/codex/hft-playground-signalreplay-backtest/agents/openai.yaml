@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Playground SignalReplay Backtest"
+  short_description: "Batch-backtest Analyzer2 SignalPacks with SignalReplay"
+  default_prompt: "Use $hft-playground-signalreplay-backtest to replay an Analyzer2 SignalPack through Playground batch-backtest. Before any command, read howto_playground_backtest_signalreplay_zh.md in full and treat it as the sole authority. Confirm the SignalPack mode, date range, bond_sz universe, and workers; always write to a new output directory, keep UTC+8 experiment timestamps, and verify report.md, metrics.csv, dashboard.png, and rss_guard_profile.json before delivery."

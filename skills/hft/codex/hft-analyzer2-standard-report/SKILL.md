@@ -1,289 +1,239 @@
 ---
 name: hft-analyzer2-standard-report
-description: "当用户要用 HftAnalyzer2 生成“标准报告”（CLI: python -m HftAnalyzer2 report-standard；Python: generate_standard_report）或要把多个 factor_set/数据集合并后出一份 baseline 标准报告（build_multi_dataset_cache + generate_standard_report）时使用；开始任何可执行步骤前必须先阅读 /home/cken/hft_projects/HftKnowledge/research_docs/analyzer_user_manual.md 并严格按文档口径执行。"
+description: "使用 HftAnalyzer2 v3 生成正式标准报告，并显式区分单原始因子评价（single_factor）、多个因子训练 LGBM（train_lgbm）、已有单个 LGBM 评价（existing_lgbm）；也用于多个 factor_set 合并 cache 后按上述模式出报告。执行前必须通读 analyzer_user_manual.md。"
 ---
 
-# HFT Analyzer2 标准报告（单数据集 & 多数据集合并）
+# HFT Analyzer2 标准报告
 
-## 强制前置阅读（Hard Gate）
+## Hard Gate：先读唯一口径文档
 
-### 文档优先级（最高）
+开始任何命令、脚本或报告生成前，完整阅读：
 
-- **以 `analyzer_user_manual.md` 为唯一准则**：本 skill 仅做导航与检查清单；任何细节/参数/路径/口径与文档不一致时，一律以文档为准。  
-- **严格按文档步骤顺序执行**：不得跳步、不得"凭经验补全"。若用户要求跳过文档硬门槛，必须明确拒绝并说明风险。  
-- **给命令前先对照文档定位**：在输出可执行命令/脚本/路径/参数前，先指出对应的文档章节/小节（标题即可），再按文档顺序给出步骤。  
+`/home/cken/hft_projects/HftKnowledge/research_docs/analyzer_user_manual.md`
 
-1) 打开并通读：`/home/cken/hft_projects/HftKnowledge/research_docs/analyzer_user_manual.md`  
-2) 在给出任何“可执行命令/脚本/路径/参数”前，先用 5–10 条要点复述并让用户确认（以文档为准）：  
-   - 正式交付优先用 **标准报告模式**：`report-standard` / `generate_standard_report`  
-   - 想下结论建议至少 **3 个月以上**数据；少量天数只用于跑通链路  
-   - 全 code 约定：一律指 `bond_sz`（以 `/data/share/dev/hft/config/universe_bond_sz.txt` 为准）；Analyzer2 的 base_rows/keep_ratio 也按该 universe 过滤 basic_table（避免 basic_table 含额外 code 导致 keep_ratio 虚假失败）  
-   - Join 轴口径（强制）：`(code,time,md_id)`，其中 `time=local_ts`，`md_id=biz_index`；`exchange_ts` 仅用于交易时段过滤/诊断  
-   - 因子侧准入（强制）：必须过 **Schema Gate**（必含 `code,time,md_id`；无 NaN/Inf；`md_id!=-1` 子集 key 唯一）与 **轴对齐 Gate**（建议用 `hft-axis-alignment-check`，3–5 天全 `bond_sz`，join 成功率与 bar 覆盖率均 ≥99.9%）  
-   - 标准输出目录规范：  
-     - 报告根目录：`/data/db/hft/analyzer2/{report_author}/{report_name}/{report_version}`  
-     - 模型根目录：`/data/db/hft/model_output/{report_author}/{lgbm_name}/{lgbm_version}`（默认 `lgbm_name==report_name`）  
-   - Analyzer2 默认**拒绝覆盖**既有产物：优先换 `report_version`/`lgbm_version`；或用 `--reuse_cache/--reuse_lgbm`  
-   - 采样模式：`tick` vs `bar` 含义不同；`bar` 需 `bar_col`；团队统一口径下不再使用 `sum_signals/sum_cols` 做区间求和（sum 请在 Agent 内完成并输出）  
-   - 多数据集标准报告：先 `build_multi_dataset_cache` 拼统一样本轴 cache，再 `generate_standard_report(reuse_cache=True)`  
-   - 多数据集合并的样本门槛（强制）：`keep_ratio >= 99%`（hard filter 后样本/Join 前 base 样本）；低于阈值默认视为对齐/覆盖失败，不建议继续回测/汇报  
-3) 若无法访问/读取该文档：停止并提示用户先提供文档内容或修复路径。  
+若无法读取，停止执行。Skill 只负责路由和验收；参数、数据语义与文档冲突时，以手册为准。
 
-## 入口选择（决策树）
+执行前向用户复述并确认以下口径：
 
-- **单数据集标准报告**（一个 `stage/author/factor_set_name`）：用 CLI `python -m HftAnalyzer2 report-standard ...`  
-- **多数据集合并 baseline 标准报告**（多个 `factor_set_name` 拼一起）：用 Python  
-  1) `build_multi_dataset_cache`  
-  2) `generate_standard_report(reuse_cache=True)`  
+- 正式结论至少使用 3 个月；团队标准提交集为 `20250102-20250730`（139 日）。
+- 全市场固定 `bond_sz`；Join key 固定 `(code,time,md_id)`，其中 `time=local_ts`、`md_id=biz_index`。
+- `exchange_ts` 用于连续交易过滤、场景窗口，以及 phys20 的执行时钟/entry lookup；不能替代 Join key。
+- v3 固定 `bar_aggtrans_time_1`、downsample=1、baseline 主 label=`ret_lag0_next100`，phys20 只评价、不进入训练 target。
+- Schema Gate、3–5 日轴对齐 Gate（join 与 bar coverage 均 ≥99.9%）和 keep_ratio≥99% 均必须通过。
+- Group cuts 在同一 `stage × segment` 内由 baseline/phys20 共用；phys20 净收益扣 `phys20_entry_spread_bps`。
+- `/data/db/hft/analyzer2` 与 `/data/db/hft/model_output` 是缓存；长期报告和模型必须物理复制进 HFTPool，禁止 symlink。
 
-## 必须向用户确认的参数（缺一不可）
+## 第一步：显式选择 report_mode
 
-- 数据集：`stage`、`author`、`factor_set_name`、`start_date`、`end_date`
-- universe：全 code 固定为 `bond_sz`（如需自定义，需明确 `--universe/--universe_file`）
-- signals：明确列名列表（CLI 用逗号分隔字符串）
-- 采样：`sample_mode=tick|bar`；若 `bar`：`bar_col`（团队统一口径：`sum_signals/sum_cols` 需为空）
-- 资源：`workers`、`downsample`（tick 常见 ds20；bar 常见 ds1）、`quantile_cut_mode`
-- 报告落盘：`report_author`、`report_name`、`report_version`（建议版本化且不可变）
-- 重跑策略：是否 `reuse_cache`/`reuse_lgbm`，或直接换新版本号
+报告对象与数据源数量是两个正交维度。先选择对象模式，再决定单数据集或多数据集合并。
 
-## workers 与内存估算（重要，避免 OOM）
+| 模式 | 何时使用 | 必须行为 | 禁止行为 |
+|---|---|---|---|
+| `single_factor` | 评价恰好 1 个原始 factor signal | 只输出 `stage=all` 的 factor 场景评价 | 不训练 LGBM；不生成 LGBM 区块或 `lgbm_*` metrics |
+| `train_lgbm` | 至少 2 个原始 factors 训练新模型 | 因子 overview/Top5 + LGBM train/valid 完整评价 | phys20 不得成为训练 target |
+| `existing_lgbm` | 评价一个已经训练好的 LGBM | 从只读模型 metadata 恢复 features 与 train/valid；报告只保留 LGBM 评价 | 不得把 prediction 再画成“单因子”；不得修改源模型目录 |
 
-`workers` 参数控制按日并行构建 cache 的进程数。内存使用与 workers 和因子数量都有关，详见 `analyzer_user_manual.md` 第 11.1 节。
+所有 v3 调用都显式传 `report_mode`，不要靠 signal 数量猜模型 provenance。v2 暂只允许 `train_lgbm`。
 
-**快速参考**：
-```
-单数据集峰值内存 ≈ workers × (8 + 0.1 × num_signals) GB
-多数据集合并峰值内存 ≈ workers × (20 + 0.2 × total_signals) GB
-```
+`existing_lgbm_dir` 与 `reuse_lgbm` 不同：
 
-| 场景 | 因子数量 | 推荐 workers |
-|------|---------|-------------|
-| 单数据集，≤30 signals | ≤30 | 12-15 |
-| 单数据集，30-60 signals | 30-60 | 10-12 |
-| 单数据集，60-100 signals | 60-100 | 8-10 |
-| 多数据集合并，≤50 signals | ≤50 | 6-8 |
-| 多数据集合并，50-100 signals | 50-100 | 4-6 |
-| 多数据集合并，>100 signals | >100 | 3-4 |
+- `existing_lgbm_dir`：外部只读源模型，供 `existing_lgbm` 使用。
+- `reuse_lgbm`：复用当前报告版本自己的训练产物，只用于 `train_lgbm` 重跑。
+- 两者不得同时传。
 
-**硬上限**：以机器总内存与任务约束为准；建议峰值控制在总内存的 85%–90% 以内，并为其他服务/进程留出裕度。  
+## 第二步：选择数据入口
 
-### 额外说明
+- 单个 factor_set：CLI `python -m HftAnalyzer2 report-standard`。
+- 多个 factor_set：Python 先 `build_multi_dataset_cache`，再 `generate_standard_report(reuse_cache=True)`。
+- 已物化的 prediction-only 专项：可使用项目内受版本控制的 runner，但最终必须调用 v3 writer 且指定 `existing_lgbm`；禁止再构造一份 `stage=all` factor_results。
 
-- bar 模式 `last_valid` 聚合已做加速优化；如需回滚旧实现用于排查/对齐，可设置环境变量：`HFT_ANALYZER2_LAST_VALID_IMPL=legacy`（口径不变，仅性能差异）。
-- 标准报告 `corr_heatmap` 默认采样上限可通过 `AnalyzerConfig.corr_heatmap_max_rows` 控制（默认 500,000；样本更少但更快、占用更低）。
-- **内存统计口径**：评估/验收时只统计“本次启动的 Analyzer 进程树 RSS（主进程 + 子进程）”；不要用“系统 used 内存”做评估（会混入其他人进程）。
-- 若你需要“数值完全可复现”的回归对比，建议使用 `quantile_cut_mode=exact`（`sample` 为近似采样，且在极端情况下可能受 cache 行顺序影响）。
+## 三种模式的最小命令
 
-## 单数据集：一条命令生成标准报告（CLI）
+以下省略了已确认的 dataset、日期、资源和输出参数；补齐时严格按手册第 5 章顺序。
 
-在仓库目录执行（按文档示例替换占位符）：
-
-```bash
-cd /home/cken/hft_projects/HftAnalyzer2
-
-python -m HftAnalyzer2 report-standard \
-  --stage <debug|production> \
-  --author <factor_author> \
-  --factor_set_name <factor_set_name> \
-  --universe bond_sz \
-  --start_date <YYYYMMDD> \
-  --end_date <YYYYMMDD> \
-  --signals sig_a,sig_b,sig_c \
-  --downsample 20 \
-  --workers 30 \
-  --quantile_cut_mode exact \
-  --with_profiling \
-  --report_author <your_name> \
-  --report_name <report_name> \
-  --report_version <version>
-```
-
-要点（其余严格看文档）：  
-- 默认只输出 **IC Top5** 的单因子详细图；全量单因子图需 `--detailed_single_factor`（非“标准报告”交付时谨慎使用）  
-- 命令结束会打印 JSON：`report_md / report_dir / model_output_dir`  
-
-### Bar 模式（CLI）
+### 单原始因子
 
 ```bash
 python -m HftAnalyzer2 report-standard \
-  --stage <debug|production> \
-  --author <factor_author> \
-  --factor_set_name <factor_set_name> \
-  --universe bond_sz \
-  --start_date <YYYYMMDD> \
-  --end_date <YYYYMMDD> \
-  --signals sig_a,sig_b,sig_c \
-  --sample_mode bar \
-  --bar_col bar_aggtrans_time_1 \
-  --workers 30 \
-  --with_profiling \
-  --report_author <your_name> \
-  --report_name <report_name> \
-  --report_version <version>
+  ... \
+  --signals <one_raw_factor> \
+  --report_mode single_factor
 ```
 
-## 重跑策略（禁止覆盖既有目录）
+验收：场景评价对象只有一个原始 factor signal，四个 `segment × label_variant` block 均展示该 signal；完整配置、Axis Gate、Coverage、Corr、诊断和 legacy 入口仍保留；无 LGBM 训练信息、Feature Importance、LGBM 场景区块或 `lgbm_*` 表。
 
-- 推荐：任何改动都换新的 `report_version`（以及需要时换 `lgbm_version`）  
-- 复用 cache：`--reuse_cache`  
-- 复用 LGBM：`--reuse_lgbm`（要求 `{model_output_dir}/model.txt` 已存在）  
+### 多因子训练 LGBM
 
-## 多数据集合并 baseline：cache → 标准报告（Python）
+```bash
+python -m HftAnalyzer2 report-standard \
+  ... \
+  --signals <factor_a,factor_b,...> \
+  --report_mode train_lgbm
+```
 
-核心约定（非常容易踩坑）：  
-- `signals_by_dataset` 的 key **必须等于** `DatasetSpec.name`  
-- 强烈建议每个数据集都设置 `prefix`，否则同名 signal 冲突会报错  
-- `date_mode` 推荐 `intersection`（只跑所有数据集共有交易日）；`union` 会引入更多缺失  
+验收：至少两个 features；新 `model.txt`、metadata、gain Top50 存在；train/valid 都非空。
 
-最小骨架（按文档 6 章示例补齐字段/参数）：
+### 已有单个 LGBM
+
+若用户说“当前 SOTA”但没有给模型路径，先读取
+`/home/cken/hft_projects/quant-workflows/workflows/hft/sota_snapshot.md` 解析当前指针；若指针不唯一或与用户指定版本冲突，停止并请用户确认，不得按目录时间猜测。用户只说“139 日”时也必须确认具体交易日集合；只有明确采用团队标准提交集时才使用 `20250102-20250730`。
+
+先读 `<existing_lgbm_dir>/metadata.json`，按 `features` 原顺序填写 signals，并记录运行前的 `model.txt/metadata.json` hash 与 mtime。执行前做已有模型兼容性 Gate：
+
+- metadata 的 `target/features/train_days/valid_days` 是必填硬门槛；target 必须是 baseline H100，而非 phys20。
+- sampling/bar_col/downsample/Analyzer2/template version 若在 metadata 中存在，必须与本次 v3 口径兼容；若缺失，必须从受版本控制的 runner、原报告 metadata、cache manifest 或用户显式输入恢复并记录，不能猜测；最终无法证明兼容时停止。
+- booster 内部 feature 数量、名称与顺序必须和 metadata.features 完全一致。
+- metadata 必须足以恢复每个 feature 的数据来源；多 factor_set 若缺 DatasetSpec、prefix 或原始列映射，停止并要求显式提供，禁止只凭最终列名反推。
+- train/valid 必须非空、互斥，并精确覆盖本次报告日期。若用户要求 metadata 之外的新 holdout/test 日期，当前模式不支持，必须 fail fast，不能静默归入 valid。
+- 恢复并记录训练样本过滤条件；例如模型只在 `exchange_ts>=09:35` 训练时，opening 必须标明为训练窗外诊断，不能只靠 train/valid 日期推断。
+
+```bash
+python -m HftAnalyzer2 report-standard \
+  ... \
+  --signals <metadata.features in exact order> \
+  --report_mode existing_lgbm \
+  --existing_lgbm_dir /data/db/hft/model_output/<author>/<name>/<version>
+```
+
+验收：源模型 hash/mtime 前后不变；metadata 的 train/valid 非空、互斥且恰好覆盖报告日期；正文没有“单因子评价”；展示模型级 gain Feature Importance，但不得把单棵树或单个 prediction 冒充单因子分析。
+
+## 多数据集合并（仅改变数据入口）
+
+两个步骤必须复用同一组 `labels`、`sampling`、`factor_agg` 和 `scenario`。下面是参数骨架；DatasetSpec、路径和 LGBM 参数的完整初始化以手册第 6.2 节为准：
 
 ```python
-from pathlib import Path
-from HftAnalyzer2 import (
-    HftAnalyzer2, AnalyzerConfig,
-    DatasetSpec, FactorAggSpec, LabelSpec, SamplingSpec, LgbmConfig,
+from HftAnalyzer2 import AnalyzerConfig, FactorAggSpec, HftAnalyzer2, LabelSpec, LgbmConfig, SamplingSpec, ScenarioReportSpec
+
+an = HftAnalyzer2(
+    config=AnalyzerConfig(
+        downsample_stride=1,
+        io_workers=1,
+        quantile_cut_mode="exact",
+    ),
+    verbose=True,
 )
 
-cfg = AnalyzerConfig(downsample_stride=20, workers=30, quantile_cut_mode="exact")
-an = HftAnalyzer2(config=cfg, verbose=True)
-
-datasets = [
-    DatasetSpec(name="Agent1/ds1", stage="debug", author="Agent1", factor_set_name="ds1", prefix="a1_ds1__"),
-    DatasetSpec(name="Agent2/ds2", stage="debug", author="Agent2", factor_set_name="ds2", prefix="a2_ds2__"),
+canonical_horizons = [1, 2, 3, 4, 5, 7, 10, 13, 16, 20, 25, 30, 40, 50, 75, 100, 150, 200]
+labels = [
+    LabelSpec("ret_lag0_next100", 0, 100),
+    *[LabelSpec(f"ret_lag0_next{h}", 0, h) for h in canonical_horizons if h != 100],
 ]
-signals_by_dataset = {
-    "Agent1/ds1": ["sig_a", "sig_b"],
-    "Agent2/ds2": ["sig_c"],
+sampling = SamplingSpec(mode="bar", bar_col="bar_aggtrans_time_1")
+factor_agg = FactorAggSpec(sum_cols=())
+scenario = ScenarioReportSpec()
+selected_mode = "train_lgbm"  # 或 single_factor / existing_lgbm
+existing_model = None          # existing_lgbm 时填写只读模型目录
+signal_mapping = {
+    d.name: {s: f"{d.prefix or ''}{s}" for s in signals_by_dataset[d.name]}
+    for d in datasets
 }
+signals_out = [
+    signal_mapping[d.name][s]
+    for d in datasets
+    for s in signals_by_dataset[d.name]
+]
 
-labels = [LabelSpec(name="ret_lag10_next100", lag=10, horizon=100)]
-sampling = SamplingSpec(mode="tick")  # bar: SamplingSpec(mode="bar", bar_col="bar_aggtrans_time_1")
-factor_agg = FactorAggSpec(sum_cols=())  # 团队统一口径：sum_cols 必须为空（sum 在 Agent 内完成）
-
-report_author = "<your_name>"
-report_name = "<merge_report_name>"
-report_version = "<v1>"
-report_dir = Path(f"/data/db/hft/analyzer2/{report_author}/{report_name}/{report_version}")
-
-# 1) 多数据集拼 cache（落到 report_dir/cache）
 dates, coverage = an.build_multi_dataset_cache(
-    datasets=datasets,
-    signals_by_dataset=signals_by_dataset,
-    start_date="<YYYYMMDD>",
-    end_date="<YYYYMMDD>",
+    ...,
     labels=labels,
     sampling=sampling,
     factor_agg=factor_agg,
-    cache_dir=report_dir / "cache",
-    error_dir=report_dir / "error_reports",
+    scenario_report=scenario,
     date_mode="intersection",
     reuse_cache=False,
-    workers=30,
 )
 
-# 2) cache 的真实列名 = prefix + 原 signal
-signals_out = [f\"{(d.prefix or '')}{s}\" for d in datasets for s in signals_by_dataset[d.name]]
+manifest_path = report_dir / "cache" / "manifest_v3.json"
+assert manifest_path.is_file()
 
-# 3) dummy dataset + 复用 cache 生成标准报告
-dummy = DatasetSpec(name="MULTI/merge", stage="debug", author="MULTI", factor_set_name="merge")
 report_md = an.generate_standard_report(
-    dataset=dummy,
-    start_date="<YYYYMMDD>",
-    end_date="<YYYYMMDD>",
+    ...,
     signals=signals_out,
     labels=labels,
     sampling=sampling,
     factor_agg=factor_agg,
-    report_author=report_author,
-    report_name=report_name,
-    report_version=report_version,
-    lgbm_cfg=LgbmConfig(num_boost_round=20, n_jobs=40),
-    with_profiling=True,
+    scenario_report=scenario,
+    report_mode=selected_mode,
+    existing_lgbm_dir=existing_model,
     reuse_cache=True,
+    reuse_lgbm=False,
     coverage_pct_by_signal=coverage,
-    extra_meta={"multi_datasets": [d.__dict__ for d in datasets], "date_mode": "intersection"},
+    lgbm_cfg=LgbmConfig(...),
+    lgbm_name=lgbm_name,
+    lgbm_version=lgbm_version,
+    extra_meta={
+        "multi_datasets": [d.__dict__ for d in datasets],
+        "signals_by_dataset": signals_by_dataset,
+        "signal_mapping": signal_mapping,
+        "resolved_dates": dates,
+        "date_mode": "intersection",
+    },
 )
-print(report_md)
 ```
 
-合并后样本数可能明显变少：signals 越多越容易被稀释；先看 `sample_overview.parquet` 与 `coverage.parquet` 再下结论（细节见文档）。
+使用 `date_mode=intersection`；每个 DatasetSpec 设置 prefix；`signals_by_dataset` 的 key 必须等于 DatasetSpec.name。禁止 `sum_cols`。cache 构建后必须读取并核验 `manifest_v3.json` 的 config、labels、signals、resolved dates 和 source identity；`extra_meta` 必须记录 DatasetSpec、原始 signals、原始→prefix 列映射及实际 resolved dates。`generate_standard_report` 所需的 dummy DatasetSpec 只是 cache API 适配器，不能被解释为真实数据来源。`report_version` 和两种 LGBM 模式的 `lgbm_version` 必须是新的唯一版本；新训练固定 `reuse_lgbm=False`。多数据集入口与报告对象正交：`single_factor` 合并后恰好一个 signal；`train_lgbm` 至少两个；`existing_lgbm` 还须传只读模型目录，并按模型 features 原顺序组装 signals。
 
-## 产物验收（最小）
+## 资源配置
 
-- `report_dir/report.md` 存在，且 `report_dir/img/` 有图片  
-- `report_dir/metadata.json`、`report_dir/signal_rank_table.parquet`、`report_dir/coverage.parquet` 存在  
-- 若开启 LGBM：`model_output_dir/model.txt` 存在  
-- 其余产物解释与字段口径：严格以 `analyzer_user_manual.md` 为准  
+正式长窗先用 `io_workers=1`；提高前在独占资源上实测。大规模 parquet/LGBM 任务先启用 `memory-guard`，总 RSS 硬上限 400GB。workers 估算与推荐值以手册第 11.1 节为准，不在 skill 中复制易漂移的旧数值。
 
-## 持久化产出（**强制 · 防止数据清理丢失**）
+## 强制报告验收矩阵
 
-`/data/db/hft/analyzer2/` 和 `/data/db/hft/model_output/` 都是**临时缓存目录**，可能被系统或共用人员清理。**任何要长期保留的报告产物必须物理复制到 HFTPool 下的对应目录**，仅 `cache/` 和 `memmap/` 等大数据可以留在 `/data/`。
+不能只检查 `img/` 非空。逐个检查机器表有行、Markdown 有引用、引用文件存在。
 
-### 适用场景
+### 场景 × label 完整性
 
-- 完成一次 standard report，且产物需要随 FA / benchmark 一同长期保留时（例如：`hft-realize-factor` 流程结束、`hft-benchmark-refresh` 流程结束、独立专项报告需要归档）
-- 用户明确要"把报告交付到 HFTPool"
+- 所有模式：`opening`、`intraday` × `baseline`、`phys20`。
+- 两种 LGBM 模式：上述维度再乘 `train`、`valid`，两者均非空。
+- window 诊断保留 `am_open/am_intraday/pm_reopen/pm_intraday/closing_diag`。
 
-### 拷贝清单
+### 每个场景必须出现
 
-| 来源（临时） | 目的（持久化） | 必须 / 可选 |
-|---|---|---|
-| `{report_dir}/report.md` | `{persist_dir}/report.md` | 必须 |
-| `{report_dir}/metadata.json` | `{persist_dir}/metadata.json` | 必须 |
-| `{report_dir}/img/` | `{persist_dir}/img/` | 必须 |
-| `{report_dir}/signal_summary.parquet` | `{persist_dir}/signal_summary.parquet` | 必须 |
-| `{report_dir}/signal_rank_table.parquet` | `{persist_dir}/signal_rank_table.parquet` | 必须 |
-| `{report_dir}/daily_ic.parquet` | `{persist_dir}/daily_ic.parquet` | 必须 |
-| `{report_dir}/coverage.parquet` | `{persist_dir}/coverage.parquet` | 必须 |
-| `{report_dir}/sample_overview.parquet` | `{persist_dir}/sample_overview.parquet` | 必须 |
-| `{report_dir}/profiling.md / profiling.parquet` | `{persist_dir}/` | 推荐 |
-| `{model_output_dir}/model.txt` | `{persist_dir}/saved_model/model.txt` | 必须（若开启 LGBM） |
-| `{model_output_dir}/lgbm_daily_ic_train.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
-| `{model_output_dir}/lgbm_daily_ic_valid.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
-| `{model_output_dir}/lgbm_daily_ic.parquet` | `{persist_dir}/saved_model/` | 推荐 |
-| `{model_output_dir}/feature_importance_gain.parquet` | `{persist_dir}/saved_model/` | 必须（若开启 LGBM） |
-| `{report_dir}/cache/` | - | **不复制**（GB-TB 级，可重生） |
-| `{model_output_dir}/memmap/` | - | **不复制**（同上） |
-| `{report_dir}/_checkpoint_passAB.pkl` | - | 可选（KB-MB 级，加速重跑但非必需） |
+| 指标 | 图形 |
+|---|---|
+| Daily IC / RankIC + cumsum | 折线图 |
+| Grouped Return | 柱状图 |
+| Net Grouped Return | 柱状图 |
+| IC / RankIC Decay | 折线图 |
+| Price Path（全 horizons） | 折线图 |
+| Top0.1% / Top0.01% TS + cumsum（LGBM） | 折线图 |
 
-### 拷贝示例
+报告正文必须直接展示 phys20 与 intraday 的 Grouped/Net/Decay/Price Path 图片，但沿用历史标准，不在图片前重复展开这些图的原始数值表。完整数值必须保存在 `metrics/`，且对应机器表非空。
 
-```bash
-PERSIST="/home/cken/hft_projects/HFTPool/pool/FA{N}/report/analyzer2_xxx"
-# 或对于 benchmark refresh:
-# PERSIST="/home/cken/hft_projects/HFTPool/pool/benchmark{date}/report_top100"
+机器表至少检查 `daily_ic/grouped_return/net_grouped_return/ic_decay/price_path/top_group_ts`；LGBM 使用对应 `lgbm_*`。维度必须包含适用的 `aggregation_level/segment/window_id/label_variant/stage/n_obs/n_days`。因子评价固定 `stage=all`，只有两种 LGBM 模式要求 train/valid。`group_quantiles` 必须等于手册/`DEFAULT_GROUP_QUANTILES`，图和表按 `bucket_id` 排序。Price Path 的 baseline horizon 集必须精确等于本 skill 的 `canonical_horizons`，phys20 与其逐一对应；当前运行时只校验 baseline/phys20 成对，不能把“程序未报错”当作全 horizons 验收。
 
-REPORT_SRC="/data/db/hft/analyzer2/{author}/{name}/{ver}"
-MODEL_SRC="/data/db/hft/model_output/{author}/{name}/{ver}"
+### 历史展示兼容性
 
-mkdir -p "$PERSIST/img" "$PERSIST/saved_model"
+除所选模式明确要求增删的评价对象区块外，其他标准报告章节与格式必须保持历史口径：
 
-# 报告核心文件
-cp -L "$REPORT_SRC/report.md"                 "$PERSIST/"
-cp -L "$REPORT_SRC/metadata.json"             "$PERSIST/"
-cp -L "$REPORT_SRC/signal_summary.parquet"    "$PERSIST/"
-cp -L "$REPORT_SRC/signal_rank_table.parquet" "$PERSIST/"
-cp -L "$REPORT_SRC/daily_ic.parquet"          "$PERSIST/"
-cp -L "$REPORT_SRC/coverage.parquet"          "$PERSIST/"
-cp -L "$REPORT_SRC/sample_overview.parquet"   "$PERSIST/"
-cp -L "$REPORT_SRC/profiling.md"              "$PERSIST/" 2>/dev/null
-cp -L "$REPORT_SRC/profiling.parquet"         "$PERSIST/" 2>/dev/null
-cp -rL "$REPORT_SRC/img/."                    "$PERSIST/img/"
+- 配置区展示完整 JSON，不得压缩成会混淆 dataset、prediction signal 与 model features 的简表；metadata 显式记录 `report_mode`。
+- 场景章节前依次保留 Axis Alignment Gate、Coverage、全局 Corr Heatmap、完整 LGBM train/valid metadata（exact dates、样本量、features、params）和 gain Feature Importance。
+- 阅读顺序保持“开盘 baseline→phys20，盘中 baseline→phys20，window/尾盘诊断，overall+baseline 兼容入口”。
+- `existing_lgbm` 只删除重复的 factor summary/detail/图片/机器表；全局 Corr、模型信息、importance、诊断和兼容入口不得随之删除。
+- `report_legacy_v2.md` 与根目录 legacy parquet 保持 overall+baseline 历史 schema；train/valid 场景数据继续放在 `metrics/lgbm_*`。
 
-# LGBM 模型物理副本（若开启）
-if [ -f "$MODEL_SRC/model.txt" ]; then
-  cp -L "$MODEL_SRC/model.txt"                       "$PERSIST/saved_model/"
-  cp -L "$MODEL_SRC/lgbm_daily_ic_train.parquet"     "$PERSIST/saved_model/"
-  cp -L "$MODEL_SRC/lgbm_daily_ic_valid.parquet"     "$PERSIST/saved_model/"
-  cp -L "$MODEL_SRC/lgbm_daily_ic.parquet"           "$PERSIST/saved_model/" 2>/dev/null
-  cp -L "$MODEL_SRC/feature_importance_gain.parquet" "$PERSIST/saved_model/"
-fi
+### Reference 差分回归 Gate
 
-# 验证不含 symlink
-if find "$PERSIST" -type l | grep -q .; then
-  echo "ERROR: symlink in $PERSIST; must be physical copy" >&2
-  exit 1
-fi
-```
+只有修改报告模式、模板或 writer 实现时，才执行本节；常规使用既有稳定实现生成新报告不要求逐字节 reference diff。实施修改时先指定最后一份已接受报告作为 reference。允许差异只能来自用户明确要求；本次允许项是三模式分流与 existing 去重、LGBM Grouped/Net 折线改柱状、补齐 phys20/intraday 产物，以及正文移除 Grouped/Net/Decay/Price Path plot-data 数值表。
 
-**理由**：历史事故——2026-04-23 `/data/db/hft/analyzer2/` 清理导致 FA20-FA27 的 16 个软链交付报告全部 dangling；2026 年某次 `/data/db/hft/model_output/` 清理又导致 benchmark0323 的纯 SOTA LGBM 模型文件丢失。**任何"长期保留"的产物都必须用 `cp -L` 物理拷贝到 HFTPool 下，不得用 symlink 偷懒**。
+- 非 allowlist 的 metrics 和根 legacy 表必须逐字节一致，或通过 schema + 数值完全一致验证。
+- 非 allowlist 图片必须逐字节一致；所有图片尺寸保持一致。
+- metadata 的数据范围、sampling、labels、cuts、成本与 train/valid 口径必须一致；只允许新增明确的 mode/provenance 字段和动态输出路径。
+- 源模型 hash/mtime 必须不变。出现任何其他差异立即停止并解释，禁止顺手压缩 metadata、删除全局章节或“优化展示”。
+
+### 模式互斥验收
+
+- `single_factor`：四个场景-label block 的评价对象均为同一个原始 factor；保留历史全局章节，无 LGBM 区块、模型、Feature Importance、`lgbm_*`。
+- `train_lgbm`：因子 overview 与 LGBM 均有；模型 target 是 baseline H100；gain Top50 为横向柱状图。
+- `existing_lgbm`：只有 LGBM train/valid 场景区块，无 factor summary/detail、factor 图片或 factor metrics；全局 Corr Heatmap 仍按历史标准保留，但不视为单因子区块；展示源模型的 gain Feature Importance；源模型不变。
+
+### phys20 额外验收
+
+- Grouped、Net Grouped、Price Path 在 opening/intraday 下均非空；两种 LGBM 模式再要求 train/valid 均非空。
+- baseline/phys20 在同一 stage × segment 共用 cuts。
+- 净收益扣执行时点 spread；`evaluation_only=true`。
+- Price Path horizons 与 baseline 完整一致。
+
+## 持久化交付
+
+报告、metadata、图片、根表、`metrics/`、profiling、复现 runner 和模型/importance（适用时）使用 `cp -L` 物理复制进对应 HFTPool 目录。两种 LGBM 模式都必须把 `model.txt`、模型 `metadata.json` 和 importance 物理快照到 `saved_model/` 并校验 hash；模型 metadata 不自带完整 sampling/DatasetSpec/source mapping，复现必须联合报告 metadata、cache manifest 与受版本控制 runner。禁止复制 `cache/*.parquet` 和 `memmap/`，但必须把权威 `cache/manifest_v3.json` 单独 `cp -L` 到 `provenance/cache_manifest_v3.json`，校验 SHA256，并在持久化 metadata 记录相对路径、hash 与原始来源；rerender 报告应快照其明确的 source report manifest，不能重建或猜测。找不到权威 manifest 时停止交付。`existing_lgbm` 还必须在报告 metadata 记录只读源路径与 hash，只允许从源目录读取，绝不能回写。复制后执行 `find <persist_dir> -type l`，结果必须为空；解析 `report.md` 的全部图片引用并确认文件存在。

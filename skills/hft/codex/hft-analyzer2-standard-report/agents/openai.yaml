@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Analyzer2 Standard Report"
+  short_description: "Generate HftAnalyzer2 v3 reports in one of three explicit modes"
+  default_prompt: "Use $hft-analyzer2-standard-report to generate a formal HftAnalyzer2 v3 report. Before any executable step, read analyzer_user_manual.md in full and confirm the required data, axis, sampling, coverage, and persistence conventions with the user. Explicitly select single_factor, train_lgbm, or existing_lgbm, preserve all mode-specific gates, and use $memory-guard before memory-heavy full-window runs."

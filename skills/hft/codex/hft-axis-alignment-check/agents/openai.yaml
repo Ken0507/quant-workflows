@@ -1,0 +1,4 @@
+interface:
+  display_name: "HFT Axis Alignment Check"
+  short_description: "Validate factor joins and bar coverage at the 99.9% gates"
+  default_prompt: "Use $hft-axis-alignment-check after smoke testing and before large factor runs. First read data.md chapter 8, confirm factor_root, 3-5 test dates, and the basic_table path, then validate all bond_sz codes on the (code,time,md_id) axis. Require both join success and bar coverage to be at least 99.9%, with no duplicate (code,bar_aggtrans_time_1) rows."
