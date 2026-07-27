@@ -46,9 +46,7 @@ description: "将当前对话的阶段性进展（方案、决策、实验结果
 
 ### Step 2: 启动 subagent
 
-使用 Codex subagent 启动独立执行者，默认使用：
-- `model: gpt-5.4`
-- `reasoning_effort: xhigh`
+使用 Codex subagent 启动独立执行者。subagent 必须与当前主会话使用相同的 model 和 reasoning effort；创建时省略 `model`、`reasoning_effort` 参数，让其自动继承当前会话配置，不要在 skill 中固定具体模型或推理等级。
 
 prompt 中包含：
 - 目标仓库 `<REPO>`（Step 0 的结果）
