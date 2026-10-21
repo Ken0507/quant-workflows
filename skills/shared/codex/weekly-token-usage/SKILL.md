@@ -1,73 +1,84 @@
 ---
 name: weekly-token-usage
-description: 当用户要一次查看最近一周每天的 codex-pool 和 DeepSeek token 消耗、上周用量或指定日期区间用量时使用。读取 pool 服务端日统计，并汇总本机 DeepSeek 会话记录；明确区分账户覆盖与本机覆盖。
+description: 当用户要看最近一周每天 codex-pool 和 DeepSeek 花了多少钱、token 消费金额、上周费用或指定区间账单时使用。默认返回每日金额、币种和费用合计；token 数只作为可选附录，缺少实际账单时明确标注。
 metadata:
-  short-description: 最近一周 codex-pool 与 DeepSeek 每日 token 用量
+  short-description: 最近一周 codex-pool 与 DeepSeek 每日费用
 ---
 
-# 每日 token 用量
+# 每日模型费用
 
-> 你是用量核对助手。一次返回逐日表和已记录合计，使用实时查询与本机实际记录，保留日期、时区和覆盖边界。
+> 你是费用核对助手。用户所说的“消费”指花了多少钱；先给每日金额和合计，清楚区分已取得账单、缺失账单与估算。保留 skill 原名作为兼容入口。
 
 ## 查询流程
 
-默认统计 `Asia/Shanghai` 今天及前 6 天，含首尾共 7 个自然日。今天标为“截至查询时刻”。用户说“上周”时用上一个完整周一至周日；指定区间时按结束日期和天数换算。
-
-从本 skill 的实际目录运行随附脚本；本机全局安装入口如下：
+默认按 `Asia/Shanghai` 统计今天及前 6 天，含首尾共 7 天。今天尚未结束。用户说“上周”时用上一个完整周一至周日。
 
 ```bash
 python3 ~/.codex/skills/weekly-token-usage/scripts/weekly_usage.py
-```
-
-其他已验证入口：
-
-```bash
 python3 ~/.codex/skills/weekly-token-usage/scripts/weekly_usage.py --last-week
 python3 ~/.codex/skills/weekly-token-usage/scripts/weekly_usage.py --days 7 --end 2026-10-20
 python3 ~/.codex/skills/weekly-token-usage/scripts/weekly_usage.py --format json
 ```
 
-收到结果后直接给中文每日表与合计，并说明 DeepSeek 为本机记录。如果有缺失、解析问题或失败，保留结果中的具体限制；`exit 2` 表示至少一个来源失败，仍展示另一来源成功取得的数据。`partial` 是有数据但覆盖不完整，不能写成完整账单。用户只问 token 时重点给 token，费用可附一行。
+直接返回“日期 / codex-pool 费用 / DeepSeek 费用”表和各自合计。默认不展示 token 表。`$` 为美元，`¥` 为人民币，不跨币种相加；保留 JSON 的原精度，显示金额通常用两位小数。pool 使用每日日桶的 `actual_cost`，不是 `cost`、余额或 `usage.total`。
 
-需要输入、输出、缓存分项时用 `--format json`。总 token 为未缓存输入 + 缓存读取 + 缓存写入 + 输出；JSON 的 `input_tokens` 指未缓存输入。需要总输入时把两个缓存桶加回；任一桶未知则不补零、不反推。费用只使用 pool 返回的 `actual_cost` 与币种。
+`exit 2` 表示一个费用来源查询失败或账单尚未接入。仍展示另一个来源已有金额，明确没完成的部分；不能声称两个平台费用均已查全。只有用户要 token 分项时使用：
+
+```bash
+python3 ~/.codex/skills/weekly-token-usage/scripts/weekly_usage.py --metric tokens --format json
+```
+
+## DeepSeek 实际费用入口
+
+默认读取 `~/.config/weekly-token-usage/deepseek-bill.csv`，或用 `--deepseek-bill PATH` 指定**从官方账单核对整理**的逐日费用文件。CSV 字段为：
+
+```csv
+date,actual_cost,currency,timezone
+2026-10-20,12.34,CNY,Asia/Shanghai
+```
+
+上行金额只是格式示例，不是真实账单。该格式是本工具的规范化输入，不声称是官网原始导出格式。每个日期一行；保留账单币种与原日桶时区，缺日不补零。导入记录不是实时查询，今天的数据截至账单导出时点；刷新的前提是取得新账单。不得把示例或 token 推算值写入此文件。
+
+如果文件不存在，默认费用列显示“账单未接入”。本机 DeepSeek API key 只能通过已核实的 `/user/balance` 查询余额；`/user/usage` 实测为 404。本机 DSH 结算日志也只有 token，没有货币费用。继续读取用户已授权、已登录的官方用量后台或账单导出；如果缺浏览器入口，完成可用来源与本地修改后向用户索取入口或文件路径，不请求用户粘贴 key/cookie。
+
+公开价目包含峰谷价，历史价格、模型、请求计费时点都会影响金额。未经确认的价格乘总 token 不能叫实际扣费。若用户另外接受估算，应另列“估算”，逐请求核对模型、缓存、历史价格和峰谷时段，不写入实际账单列。
 
 ## 数据源与依赖
 
-- Python 3.11+；本机 `zstandard` 模块，或已安装的 `zstd` 命令。不自动安装或升级环境。
-- pool 从 `~/.codex/lgj.config.toml` 获取当前 provider/base URL 和 `/bin/cat` 指向的专用 key 文件。可用 `--pool-profile PATH` 指定另一份已有配置；不执行其他认证命令。
-- pool 日桶参数是 `days` 和 `timezone`；`start_date/end_date` 只影响服务端的其他统计，不截取 `daily_usage`。脚本取从目标起始日到今天的日桶，再本地筛选，最大回溯 90 天。不能用 `usage.total` 代替目标区间合计。
-- DeepSeek 默认扫描 `~/.ae/workbench/home/sessions`、`sessions-archive` 和 `~/.dsh/sessions`。支持 DSH v2–v4 已识别的结算事件。`--dsh-root PATH` 可重复，指定后替换默认目录列表；只添加用户实际需要的本机日志根。
-- DeepSeek 官方 `/user/balance` 只返回余额。本机 key 对 `/user/usage` 的实测为 HTTP 404，不能从余额倒算逐日 token。若用户要求**全账户**用量，需要获授权的官方用量后台或导出记录；本 skill 当前自动结果不能替代它。不要请求用户把 key/cookie 贴到聊天。
-
-最低依赖与真实链路检查就是运行默认查询。离线维护回归：
-
-```bash
-python3 -m unittest discover -s ~/.codex/skills/weekly-token-usage/scripts -p 'test_*.py' -v
-```
+- Python 3.11+。费用模式只查询 pool 并读取费用 CSV，不扫描本机会话；可选 token 模式还需 `zstandard` 模块或 `zstd` 命令。
+- pool 从 `~/.codex/lgj.config.toml` 读取现有 provider/base URL 及 `/bin/cat` 指向的专用 key。可用 `--pool-profile PATH` 指定已有配置，不执行任意认证命令。
+- pool 日桶由 `days/timezone` 控制，最大回溯90天。`start_date/end_date` 只影响其他统计；脚本取足够范围后在本地截取，不能用历史累计代替目标区间费用。
+- token 模式的 DSH 只读适配、归档去重和缺记录处理见 [README.md](README.md)。这些记录不能证明账户实际花费。
 
 ## 硬性规则
 
-1. **每次新查**：每次调用实时查询 pool 并重新读取本机记录，不把上次数字当作当前值。
-2. **保留覆盖**：pool 是当前 key 的服务端用量；DeepSeek 是所列本机日志的已记录用量。不能称为两个账户的完整账单。
-3. **不重复计数**：使用脚本处理重试结算替换、归档/格式迁移副本和 fork 继承前缀，不直接相加所有 usage，也不相加累计计数。
-4. **未知不等于零**：缺日期、缺 usage、未支持的日志格式和查询失败必须明确显示。无记录不能说成零消费。
-5. **保护原件和认证**：只读配置、日志与用量接口；不打印密钥、cookie、对话正文、HTTP 原始错误体，不发送模型请求，不修改会话或服务。
-6. **金额口径**：pool `actual_cost` 是平台记账金额，不能叫现金支出；不从 token 估算 DeepSeek 费用，不将其他单位换算为美元。
+1. **先给钱数**：默认每日费用与合计，用户未要求时不拿 token 表替代。
+2. **依据实际金额**：pool 使用 `actual_cost`；DeepSeek 使用获授权的官方费用原件。当前余额、今日价格和本机 token 不等于历史扣费。
+3. **未知不填零**：未接入、缺日、缺金额、未知币种、查询失败均需显式展示；无法取得两者时报告部分完成。
+4. **日期与币种明确**：按所选自然日筛选；不同币种不加总，导入日桶不跨时区硬转换，当日不是完整一天。
+5. **刷新来源明确**：pool 每次实时请求；DeepSeek 导入数据标明截至导出时点，不伪装实时。
+6. **只读与凭据保全**：不调用模型、不修改会话和服务、不输出密钥/cookie/正文/原始HTTP错误体；账单原件不提交Git。
 
 ## 反模式
 
-❌ 给 pool 传入历史起止日后，直接信任返回日期。→ 实测日桶仍以今天回溯；必须先取足够天数再筛选。
+❌ 用户问消费却只给 token 数。→ 2026-10-21 用户已明确纠正为“花了多少钱”，默认给费用表。
 
-❌ 相加 DSH 中每条 usage 或同一会话的多个归档版本。→ 已发现结算替换、重试、迁移副本和继承前缀，按模块的请求身份去重。
+❌ 按总 token 乘一个单价，写成 DeepSeek 实际花费。→ 缓存、模型与峰谷价格不同；要实际费用须拿账单，估算必须另列。
 
-❌ 把 DeepSeek 余额或本机会话合计称为账户完整历史消费。→ 余额没有日 token；本机日志不覆盖其他机器及未落记录请求。
+❌ pool 历史起止日期传入后直接信任日桶或历史总量。→ 按 days 取回溯窗后筛选，再对已取得的日费用求和。
 
 ## 常见问题
 
 | 现象 | 处理 |
 |---|---|
-| pool 网络失败 | 若是沙箱拒绝网络，按宿主授权流程重跑同一只读命令；不要换凭据或启动模型探测。 |
-| pool HTTP 401/403 | 核对指定 profile 和既有 key 文件的可读性及有效性，不输出 key。保留 DeepSeek 结果。 |
-| DeepSeek 缺日志或解码器 | 查看 JSON 的 `coverage.roots/missing_roots/diagnostics`；确认实际会话根与现有 Python/zstd 环境。 |
-| 记录缺 usage 或格式不支持 | 保留已记录小计和遗漏数量；不能估算填平。维护细节及来源见 [README.md](README.md)。 |
-| 要完整 DeepSeek 账户账单 | 明确当前覆盖不足，需官方用量后台或获授权的导出；本地结果只能作为补充。 |
+| pool 网络失败 | 若为沙箱网络限制，按宿主流程重跑同一只读命令；不启动模型探测。 |
+| pool HTTP 401/403 | 核对已有 profile 与 key 文件是否有效可读，不打印key。 |
+| DeepSeek 账单未接入 | 需要官方账单导出路径或已登录后台入口；这是尚未完成项，不是零消费。 |
+| CSV 重复日期、混币种或时区不符 | 回官方原件核对后整理成一致的逐日记录，不在代码中猜测合并。 |
+| 用户另要 token | 显式使用 `--metric tokens`，保留本机覆盖限制。 |
+
+离线回归命令：
+
+```bash
+python3 -m unittest discover -s ~/.codex/skills/weekly-token-usage/scripts -p 'test_*.py' -v
+```

@@ -1,4 +1,4 @@
 interface:
-  display_name: "一周 Token 用量"
-  short_description: "一次汇总最近一周每天 codex-pool 与 DeepSeek 本机 token 消耗"
-  default_prompt: "使用 $weekly-token-usage 查询最近一周每天的 codex-pool 和 DeepSeek token 消耗。"
+  display_name: "一周模型费用"
+  short_description: "查看最近一周每天 codex-pool 与 DeepSeek 花了多少钱，并标明缺失账单"
+  default_prompt: "使用 $weekly-token-usage 查询最近一周每天 codex-pool 和 DeepSeek 花了多少钱。"

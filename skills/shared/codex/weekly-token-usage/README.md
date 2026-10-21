@@ -1,26 +1,35 @@
-# 每周 token 用量
+# 每周模型费用
 
-让 cken 用一次调用查看最近一周每天的 codex-pool 和 DeepSeek token。默认覆盖北京时间今天及前六天；也支持完整上周和指定结束日期。skill 源码属于个人通用技能仓 quant-workflows 的 shared/codex，不属于 AE 正式角色包，不触碰已退役的 HFT 项目技能入口。
+让 cken 用一次调用查看最近一周每天的 codex-pool 和 DeepSeek 费用。2026-10-21 用户纠正：“我要的是花了多少钱”。默认输出已改为每日金额、币种和费用合计；token 查询仅保留为可选附录。默认覆盖北京时间今天及前六天；也支持完整上周和指定结束日期。skill 源码属于个人通用技能仓 quant-workflows 的 shared/codex，不属于 AE 正式角色包，不触碰已退役的 HFT 项目技能入口。
 
 ## 供应链位置
 
-个人工具使用核对链 · 只读统计。
+个人工具费用核对链 · 只读统计。
 
 ```text
 当前 pool 配置 → pool 服务端 daily_usage ──┐
-本机 DSH 会话 → 已落盘的 DeepSeek usage ──┼→ [weekly-token-usage] → 每日表、区间合计、覆盖说明
+官方 DeepSeek 账单 → 规范化费用 CSV ───┼→ [weekly-token-usage] → 每日费用、分币种合计、缺失说明
 用户日期范围与时区 ───────────────────────┘
 ```
 
-- **上游**：pool 维护的 key 用量记录、DSH 已记录的模型结算事件、用户所需日期范围。
+- **上游**：pool 维护的 key 费用记录、DeepSeek 官方费用导出、用户所需日期范围；可选 token 附录读取 DSH 结算元数据。
 - **下游**：cken 核对个人工具用量；后续 agent 直接展示结果。不会自动发送报告或配置定时任务。
 - **相邻能力**：原生 Codex/ChatGPT 账户额度、DeepSeek 官方账户账单均有独立范围，不与这里混算。
 
-## 背景与设计
+## 当前费用交付与未完成项
+
+- pool：默认直接展示服务端每日 `actual_cost` 和区间合计。
+- DeepSeek：增加规范化官方费用 CSV 读取入口，默认 `~/.config/weekly-token-usage/deepseek-bill.csv`，可用 `--deepseek-bill` 指定。字段为 `date,actual_cost,currency,timezone`。读取器已用合成账单验证，**尚未拿到用户真实官方账单或后台登录态，实际费用链路仍未接通**；默认显示“账单未接入”并退出2。
+- 导入并非实时查询；当天费用截至导出时点。重复日期、混币种、跨时区日桶均拒绝直接累加。账单缺日不补零，金额原件不入Git。
+- 只在明确 `--metric tokens` 时读取本机 DSH 日志；这保留初版统计能力，但不再代替费用答案。
+
+本次核查官方[价目表](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)确认有缓存/未缓存/输出的差别和峰谷价，[更新日志](https://api-docs.deepseek.com/zh-cn/updates)确认10月17日模型更新价格不变。本机日志没有货币结算字段，不能因此推断实际账户扣费。准确费用仍须官方原件；需要 cken 提供已登录后台入口或账单导出路径，agent再核对整理并验证真实数据接入。
+
+## 初版 token 附录的背景与设计
 
 之前 codex-pool 查询需要现场发现接口、加载配置并手工汇总；DeepSeek 使用路径在本机工作台。用户希望一次拿到两个来源每天的数据。创建时实测 pool 用量接口可用；DeepSeek 官方 key 的余额接口可用，但 `/user/usage` 返回 404，公开 API 文档列出的余额接口不提供每日 token。
 
-因此自动结果保留两种不同覆盖：pool 由配置 key 的服务端日记录给出，DeepSeek 由本机 DSH 结算元数据给出。后者**不是全账户用量**，无法覆盖其他机器、已删除会话、后台标题等未落 usage 的调用、取消/失败后没有 token 记录的请求。当前缺口明确保留；未来有官方用量接口或授权导出格式后，可增加账户来源，不能静默替换成猜测。
+初版 token 附录保留两种不同覆盖：pool 由配置 key 的服务端日记录给出，DeepSeek 由本机 DSH 结算元数据给出。后者**不是全账户用量**，无法覆盖其他机器、已删除会话、后台标题等未落 usage 的调用、取消/失败后没有 token 记录的请求。当前缺口明确保留；未来有官方用量接口或授权导出格式后，可增加账户来源，不能静默替换成猜测。
 
 | 设计选择 | 理由 |
 |---|---|
@@ -39,7 +48,7 @@
 
 调研了 [ccusage](https://github.com/ccusage/ccusage) 和 [better-ccusage](https://github.com/cobra91/better-ccusage)；这些本地 agent 日志工具没有本任务的 pool 服务端日桶与 DSH 结算组合入口。选择 Python 标准库薄封装 pool，复用已安装 zstandard 解码，按 DSH 的已验证元数据格式做有界统计。没有另造 API 代理或安装常驻服务。
 
-## 已验证入口与证据
+## 初版 token 链路验证与来源
 
 2026-10-21 在 84 本机先用裸命令验证，再包装 skill：
 
@@ -58,7 +67,7 @@
 | 本机 `~/.ae/workbench/runtime/node_modules/.pnpm/@deepseek-ai+dsh-token-meter@*/node_modules/@deepseek-ai/dsh-token-meter/lib/types/usage-projection.js` | 已安装结算替换与 retry 的实现口径；升级后应按现有测试复验。 |
 | `scripts/deepseek_local.py` | 实际支持的事件、归档选择、继承前缀、provider 过滤和诊断字段。 |
 
-真实逐日用量、密钥、会话正文和本机认证文件不提交进 Git。没有把 skill 的通过视为 DeepSeek 全账户账单已接通。
+真实逐日用量、密钥、会话正文和本机认证文件不提交进 Git。没有把 token 统计或合成费用导入测试通过视为 DeepSeek 真实账户账单已接通。
 
 ## 维护与安装
 
@@ -67,5 +76,7 @@
 `--dsh-root` 可以重复；显式指定后替换默认根列表。日志全量流式读取，日期按结算事件时间筛选，不能按文件修改时间猜测事件日期。目录缺失、解析中断和未支持格式保留在 `coverage`。历史日志持续增大时可优化元数据索引，但索引必须可重建且不能把旧缓存当作当前请求结果。
 
 ## 变更记录
+
+- 2026-10-21 用户纠偏：默认改为每日费用表；pool 展示每日金额，DeepSeek 增加官方费用CSV读取、币种/时区/重复校验，缺账单明确未接入；保留原技能名及可选token模式。
 
 - 2026-10-21：首次创建；接通 pool 实时日桶和 DeepSeek 本机已记录用量，提供每日表、JSON 分项、上周/结束日期参数及覆盖诊断。
