@@ -241,7 +241,7 @@ def _fold(session, start_ms, end_ms, diagnostics):
     return accepted
 
 
-def collect(roots: list[Path], start: date, end: date, tz: ZoneInfo) -> dict:
+def collect(roots: list[Path], start: date, end: date, tz: ZoneInfo, on_attempt=None) -> dict:
     """Aggregate inclusive local dates; return only counts and coverage metadata."""
     if start > end:
         raise ValueError("start must be on or before end")
@@ -314,6 +314,8 @@ def collect(roots: list[Path], start: date, end: date, tz: ZoneInfo) -> dict:
         if header.get("isSeeded") and header.get("parentSession") not in sessions:
             diagnostics["seeded_parents_not_in_roots"] += 1
         for attempt in _fold(session, start_ms, end_ms, diagnostics):
+            if on_attempt is not None:
+                on_attempt(attempt)
             day = datetime.fromtimestamp(attempt["time"] / 1000, tz).date().isoformat()
             row = days[day]
             for key in FIELDS:

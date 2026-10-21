@@ -1,82 +1,73 @@
 # 每周模型费用
 
-让 cken 用一次调用查看最近一周每天的 codex-pool 和 DeepSeek 费用。2026-10-21 用户纠正：“我要的是花了多少钱”。默认输出已改为每日金额、币种和费用合计；token 查询仅保留为可选附录。默认覆盖北京时间今天及前六天；也支持完整上周和指定结束日期。skill 源码属于个人通用技能仓 quant-workflows 的 shared/codex，不属于 AE 正式角色包，不触碰已退役的 HFT 项目技能入口。
+让 cken 一次查看最近一周每天 codex-pool 和 DeepSeek 花了多少钱。默认输出每日费用、币种与各自合计；北京时间今天及前六天，也支持完整上周和指定结束日期。保留 `weekly-token-usage` 原名称作为兼容入口，token 数只作可选附录。
 
 ## 供应链位置
 
 个人工具费用核对链 · 只读统计。
 
 ```text
-当前 pool 配置 → pool 服务端 daily_usage ──┐
-官方 DeepSeek 账单 → 规范化费用 CSV ───┼→ [weekly-token-usage] → 每日费用、分币种合计、缺失说明
-用户日期范围与时区 ───────────────────────┘
+pool 配置 → 服务端 daily_usage ──────────┐
+DSH 去重请求 + 官方峰谷价 ────────────────┼→ [weekly-token-usage] → 每日费用、币种、合计、来源说明
+可选官方账单 CSV ────────────────────────┘
 ```
 
-- **上游**：pool 维护的 key 费用记录、DeepSeek 官方费用导出、用户所需日期范围；可选 token 附录读取 DSH 结算元数据。
-- **下游**：cken 核对个人工具用量；后续 agent 直接展示结果。不会自动发送报告或配置定时任务。
-- **相邻能力**：原生 Codex/ChatGPT 账户额度、DeepSeek 官方账户账单均有独立范围，不与这里混算。
+- **上游**：当前 pool key 的服务端记录、本机 DSH 请求结算元数据、官方价格；可选官方费用导出。
+- **下游**：cken 直接查看每日花费，agent无需另作手工计算。不发送报告或配置定时任务。
+- **相邻范围**：原生 Codex 订阅额度、其他机器使用和账户实际扣费流水不混入本机计价结果。
 
-## 当前费用交付与未完成项
+## 需求与已定口径
 
-- pool：默认直接展示服务端每日 `actual_cost` 和区间合计。
-- DeepSeek：增加规范化官方费用 CSV 读取入口，默认 `~/.config/weekly-token-usage/deepseek-bill.csv`，可用 `--deepseek-bill` 指定。字段为 `date,actual_cost,currency,timezone`。读取器已用合成账单验证，**尚未拿到用户真实官方账单或后台登录态，实际费用链路仍未接通**；默认显示“账单未接入”并退出2。
-- 导入并非实时查询；当天费用截至导出时点。重复日期、混币种、跨时区日桶均拒绝直接累加。账单缺日不补零，金额原件不入Git。
-- 只在明确 `--metric tokens` 时读取本机 DSH 日志；这保留初版统计能力，但不再代替费用答案。
+用户于2026-10-21明确：“我要的是花了多少钱”，并指出 Praxis Zone 上已经使用过 DeepSeek 费用查询。初版只给 token；随后又把官方扣费流水当成唯一可交付金额来源，导致已有本机计价能力被阻断。这两点均已纠正：默认先给费用，有估算就明确标记，不为普通费用查询额外要求登录后台。
 
-本次核查官方[价目表](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)确认有缓存/未缓存/输出的差别和峰谷价，[更新日志](https://api-docs.deepseek.com/zh-cn/updates)确认10月17日模型更新价格不变。本机日志没有货币结算字段，不能因此推断实际账户扣费。准确费用仍须官方原件；需要 cken 提供已登录后台入口或账单导出路径，agent再核对整理并验证真实数据接入。
+本机当日已有 `/data/db/hft/temp/data-watch-cost-20261021/cost.py`：按请求的输入、缓存命中、输出 token，结合工作日峰谷价计算人民币金额，来源记录在同目录 `calls.json`。这些是可能被清理的本机证据；不作为运行依赖，也不修改或复制其业务原件。它是一个指定任务子集的计价脚本，不是全账户流水；本次没有从 DSH 对话历史证明它与哪次 Praxis 页面操作一一对应，因此不宣称找到了官方账单 API。
 
-## 初版 token 附录的背景与设计
+本 skill 复用这一计价方法，增加请求去重、模型映射、节假日、官方价目核对和显式覆盖诊断。原生账户插件目前查到的详情接口是账户资料/余额及用量页面链接；仅对一个猜测的 `/user/usage` 返回404，不能证明不存在其他账单接口。官方流水能力没有被否定，也不再成为默认费用查询的前置。
 
-之前 codex-pool 查询需要现场发现接口、加载配置并手工汇总；DeepSeek 使用路径在本机工作台。用户希望一次拿到两个来源每天的数据。创建时实测 pool 用量接口可用；DeepSeek 官方 key 的余额接口可用，但 `/user/usage` 返回 404，公开 API 文档列出的余额接口不提供每日 token。
+## 默认费用来源
 
-初版 token 附录保留两种不同覆盖：pool 由配置 key 的服务端日记录给出，DeepSeek 由本机 DSH 结算元数据给出。后者**不是全账户用量**，无法覆盖其他机器、已删除会话、后台标题等未落 usage 的调用、取消/失败后没有 token 记录的请求。当前缺口明确保留；未来有官方用量接口或授权导出格式后，可增加账户来源，不能静默替换成猜测。
+| 来源 | 取数与计价 | 展示与边界 |
+|---|---|---|
+| codex-pool | 从实际 profile 读取现有 endpoint/key，以 `days/timezone` 查日桶，再本地截取区间；累加日记录 `actual_cost` | 平台记账费用，按返回币种展示；不是余额或历史总累计。 |
+| DeepSeek | 流式读取本机 DSH 已去重请求，按模型、未缓存输入、缓存读取、输出及峰谷分别计算 | `estimated_cost`、`≈¥`；是本机记录的模型费用估算，不是账户扣费流水。 |
+| 可选 DeepSeek 账单 | 显式 `--deepseek-bill PATH` 读取经官方原件核对的规范化 CSV | `actual_cost`；截至导出时点，缺日不填零，禁止混币种/时区/重复日期。 |
 
-| 设计选择 | 理由 |
-|---|---|
-| 默认今天及前六天；上周为完整周一至周日 | 两个常见问法含义不同，避免当天不完整数据被当作已结束自然日。 |
-| pool 从实际配置读取地址和 key 路径 | 不在仓库硬编码服务地址、复制密钥或执行任意认证程序。 |
-| 使用 `days` 取足够范围，再筛选日桶 | 实测 `start_date/end_date` 不约束 `daily_usage`；公开实现也确认这些日期参数用于 `model_stats`。 |
-| 合计只累加选中日桶 | `usage.total` 是历史累计，不能直接当七天总量。 |
-| DSH 流式解压，只保留计数和身份元数据 | 无需把对话正文存入统计输出，不生成解压中间文件。 |
-| 归档与格式迁移按会话 ID 去重；fork 排除继承前缀 | 避免一次请求因复制、迁移或分叉被反复记账。 |
-| 同 turn/step 结算替换；显式 retry 开新请求 | 对齐已安装 DSH token-meter 的结算投影。 |
-| 无记录与未知分项显式展示 | 数据遗漏和真零消费不能混为一谈。 |
+默认日志根为 `~/.ae/workbench/home/sessions`、`sessions-archive`、`~/.dsh/sessions`；显式 `--dsh-root` 可重复并替换默认根。Python 3.11+，解压用已有 `zstandard` 模块或 `zstd`；不落解压文件、不安装常驻服务。只保留计数及请求身份元数据，不输出正文或认证。
 
-输入/缓存口径：两个适配器的 `input_tokens` 都是未缓存输入，缓存读取与写入另列，总数为 `input + cache_read + cache_write + output`。缓存缺项时保留未知；有服务端 total 但缓存分项未知时只保留可证实的 total，不倒算分项。
+## 价格与日期依据
 
-## 复用调研
+2026-10-21已核对[官方价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)及[更新日志](https://api-docs.deepseek.com/zh-cn/updates)：9月10日Flash价格调整，10月17日模型更新价格不变。当前价卡从2026-09-10开始，未知历史区间不猜测。
 
-调研了 [ccusage](https://github.com/ccusage/ccusage) 和 [better-ccusage](https://github.com/cobra91/better-ccusage)；这些本地 agent 日志工具没有本任务的 pool 服务端日桶与 DSH 结算组合入口。选择 Python 标准库薄封装 pool，复用已安装 zstandard 解码，按 DSH 的已验证元数据格式做有界统计。没有另造 API 代理或安装常驻服务。
+| 每百万 token（人民币） | Flash 高峰 / 空闲 | Pro 高峰 / 空闲 |
+|---|---:|---:|
+| 未缓存输入 | 2 / 1 | 9 / 4.5 |
+| 缓存命中 | 0.04 / 0.02 | 0.30 / 0.15 |
+| 输出 | 8 / 4 | 27 / 13.5 |
 
-## 初版 token 链路验证与来源
+北京时间周一至周五（不含中国法定节假日）09:00–12:00、14:00–18:00为高峰，其余为空闲。官方明确周末全天空闲，因此补班周末也不改为高峰。2026年价卡范围内，中秋9月25–27日、国庆10月1–7日；依据[国务院2026年节假日通知，北京市政府转载](https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html)，国办发明电〔2025〕7号。未知年份不静默套用普通工作日。
 
-2026-10-21 在 84 本机先用裸命令验证，再包装 skill：
+每次计算前实时核对官方表格和时间规则；单价或结构变化即明确失败，保留pool结果，维护者须新增对应生效区间。旧Flash别名按官方映射处理，未知provider/model、缺缓存桶或未核实缓存写入价不瞎算。
 
-- pool 默认七天查询成功；把 `days=2` 与历史 `start_date/end_date` 一起传入仍返回今天及昨天，证明不能直接按起止参数信任日桶。脚本只用 `days/timezone`，随后筛选。
-- DeepSeek `/user/balance` 返回 200，`/user/usage` 返回 404。认证只在内存使用，未打印或存入报告。
-- 完整脚本成功返回七个日期以及本机覆盖提示；读取的 DSH 版本为 `0.2.1-alpha.3`。本机存在 v3/v4、归档及少量未支持旧格式；缺 usage 的请求和未支持格式明确列在 JSON 中。
-- 合成测试覆盖北京时间跨日、跨年周窗口、完整上周、pool 历史总量误用、缓存重复计入、日期重复、缺字段、DSH 重试和结算替换、继承前缀、其他 provider 排除、缺 usage、归档/迁移去重与截断日志。具体测试名称可用 `unittest` 列出。
+按本机结算时点近似计费时点；跨峰谷边界、折扣、赠送余额可能使估算与账单不同。本机删失记录、其他机器、缺usage、后台调用和独立Search/Fetch费用不在估算覆盖内，合计只能称为已记录请求的估算。
 
-维护时优先查看以下精确入口：
+## 去重与回归
 
-| 来源 | 用途 |
-|---|---|
-| [hft-sdk-issues #319](https://github.com/hft-prop/hft-sdk-issues/issues/319) | 双入口配置的归属、现有 profile/key 文件职责与认证边界。 |
-| [Sub2API gateway_handler.go](https://github.com/Wei-Shaw/sub2api/blob/main/backend/internal/handler/gateway_handler.go) | `Usage`、`parseUsageDateRange`、`buildAPIKeyDailyUsage`：区分日桶 days 与分模型日期筛选。公开源码是参考，已部署行为另以实测为准。 |
-| [DeepSeek 官方余额 API](https://api-docs.deepseek.com/api/get-user-balance) | 确认余额不是历史 token 数据。 |
-| 本机 `~/.ae/workbench/runtime/node_modules/.pnpm/@deepseek-ai+dsh-token-meter@*/node_modules/@deepseek-ai/dsh-token-meter/lib/types/usage-projection.js` | 已安装结算替换与 retry 的实现口径；升级后应按现有测试复验。 |
-| `scripts/deepseek_local.py` | 实际支持的事件、归档选择、继承前缀、provider 过滤和诊断字段。 |
+同一会话的归档/迁移副本只取一次，fork排除继承前缀；同turn/step的结算替换保留最终样本，显式retry另算。日期按事件时间，不以文件修改时间猜测。缺日期不填零，未知字段不推算；总token包含输入、缓存与输出，不能再将缓存重复加进费用。
 
-真实逐日用量、密钥、会话正文和本机认证文件不提交进 Git。没有把 token 统计或合成费用导入测试通过视为 DeepSeek 真实账户账单已接通。
+已完成真实七日查询，另有合成回归覆盖日期边界、币种、账单缺失、归档/fork/retry、token分项、峰谷整点、周末/节假日和模型计价。测试通过不代表官方账户流水已验证。真实逐日金额、凭据、会话正文不提交Git。
 
-## 维护与安装
+## 维护入口与复用选择
 
-源码位于 `skills/shared/codex/weekly-token-usage`，安装到 `~/.codex/skills/weekly-token-usage` 的单一软链接。只添加这个入口，不运行旧版全仓同步去恢复已退役的 HFT skill。换机器时提供已获授权的 pool 配置与本机 DSH 目录即可；默认路径不是跨机器可达性的承诺。
+- [hft-sdk-issues #319](https://github.com/hft-prop/hft-sdk-issues/issues/319)：pool配置来由及认证边界。
+- [Sub2API gateway_handler.go](https://github.com/Wei-Shaw/sub2api/blob/main/backend/internal/handler/gateway_handler.go)：`Usage/buildAPIKeyDailyUsage`；`start_date/end_date`影响分模型统计，不截取日桶。
+- 本机 DSH `0.2.1-alpha.3` 的 `dsh-token-meter/lib/types/usage-projection.js`：请求结算替换和retry投影口径。
+- `scripts/deepseek_cost.py`：当前价格、模型映射、官方表格验证、峰谷及日历；`deepseek_local.py`：本机只读解码与去重。
+- `scripts/weekly_usage.py`：两来源编排、费用展示和可选CSV导入。CSV列为 `date,actual_cost,currency,timezone`，它是本工具规范化输入，不冒称官网原始格式。
 
-`--dsh-root` 可以重复；显式指定后替换默认根列表。日志全量流式读取，日期按结算事件时间筛选，不能按文件修改时间猜测事件日期。目录缺失、解析中断和未支持格式保留在 `coverage`。历史日志持续增大时可优化元数据索引，但索引必须可重建且不能把旧缓存当作当前请求结果。
+已调研 ccusage/better-ccusage；它们不直接覆盖本任务的pool服务端与DSH组合，因此保留Python薄封装、标准库HTTP/Decimal及已有zstd。源码归个人 quant-workflows 的 `skills/shared/codex/weekly-token-usage`，全局软链接到 `~/.codex/skills/weekly-token-usage`；不触碰AE正式包或已退役HFT入口。
 
 ## 变更记录
 
-- 2026-10-21 用户纠偏：默认改为每日费用表；pool 展示每日金额，DeepSeek 增加官方费用CSV读取、币种/时区/重复校验，缺账单明确未接入；保留原技能名及可选token模式。
-
-- 2026-10-21：首次创建；接通 pool 实时日桶和 DeepSeek 本机已记录用量，提供每日表、JSON 分项、上周/结束日期参数及覆盖诊断。
+- 2026-10-21：首次建立token统计。
+- 同日：用户纠正为金额，默认改为费用；加入可选规范化官方CSV。
+- 同日第二次纠正：核对本机已有DeepSeek计价脚本，默认自动提供逐请求峰谷费用估算，取消强制账单/登录前置，保留平台记账与估算区别。

@@ -184,14 +184,16 @@ def cost_markdown(report):
         if provider.get("status") == "unavailable" and not provider.get("days"):
             return "账单未接入"
         if row is None:
-            return "无账单记录"
-        if row.get("actual_cost") is None:
+            return "无记录"
+        estimated = provider.get("basis") == "local_usage_official_rate_estimate"
+        amount = row.get("estimated_cost" if estimated else "actual_cost")
+        if amount is None:
             return "费用缺失"
         currency = provider.get("currency")
         if currency not in {"USD", "CNY"}:
             return "币种未确认"
         symbol = "$" if currency == "USD" else "¥"
-        return f"{symbol}{Decimal(row['actual_cost']):,.2f}"
+        return f"{'≈' if estimated else ''}{symbol}{Decimal(amount):,.2f}"
     lines = [f"费用区间：{report['start']} 至 {report['end']}（{report['timezone']}）；查询时间：{report['queried_at']}。",
              "", "| 日期 | codex-pool 费用 | DeepSeek 费用 |", "|---|---:|---:|"]
     for day in day_range(date.fromisoformat(report["start"]), date.fromisoformat(report["end"])):
@@ -254,7 +256,7 @@ def main(argv=None):
     parser.add_argument("--pool-profile", type=Path, default=Path.home()/".codex/lgj.config.toml")
     parser.add_argument("--dsh-root", type=Path, action="append", help="会话根目录，可多次；指定后替换默认根")
     parser.add_argument("--metric", choices=("cost", "tokens"), default="cost", help="默认显示费用；tokens 为辅助用量视图")
-    parser.add_argument("--deepseek-bill", type=Path, default=Path.home()/".config/weekly-token-usage/deepseek-bill.csv", help="经官方账单核对的逐日费用 CSV")
+    parser.add_argument("--deepseek-bill", type=Path, help="可选：用官方逐日费用 CSV 替代默认的本机计价估算")
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
     args = parser.parse_args(argv)
     try:
@@ -269,12 +271,22 @@ def main(argv=None):
         report["codex_pool"] = pool_usage(args.pool_profile.expanduser(), start, end, now, args.timezone)
     except UsageError as exc:
         report["codex_pool"] = {"status": "error", "error": str(exc)}
-    try:
-        report["deepseek_cost"] = read_deepseek_bill(args.deepseek_bill.expanduser(), start, end, args.timezone)
-    except UsageError as exc:
-        report["deepseek_cost"] = {"status": "error", "error": str(exc)}
+    roots = args.dsh_root or [Path.home()/".ae/workbench/home/sessions", Path.home()/".ae/workbench/home/sessions-archive", Path.home()/".dsh/sessions"]
+    if args.metric == "cost":
+        try:
+            if args.deepseek_bill is not None:
+                report["deepseek_cost"] = read_deepseek_bill(args.deepseek_bill.expanduser(), start, end, args.timezone)
+            else:
+                from deepseek_cost import PriceError, estimate_cost
+                try:
+                    report["deepseek_cost"] = estimate_cost([p.expanduser() for p in roots], start, end, tz)
+                except PriceError as exc:
+                    raise UsageError(str(exc)) from None
+        except UsageError as exc:
+            report["deepseek_cost"] = {"status": "error", "error": str(exc)}
+        except Exception as exc:
+            report["deepseek_cost"] = {"status": "error", "error": f"DeepSeek 计价失败（{type(exc).__name__}），未输出原始记录。"}
     if args.metric == "tokens":
-        roots = args.dsh_root or [Path.home()/".ae/workbench/home/sessions", Path.home()/".ae/workbench/home/sessions-archive", Path.home()/".dsh/sessions"]
         try:
             from deepseek_local import collect
             report["deepseek"] = collect([p.expanduser() for p in roots], start, end, tz)
