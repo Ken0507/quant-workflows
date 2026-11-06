@@ -38,7 +38,13 @@ gh issue view <N> --repo hft-prop/hft-sdk-issues
 gh auth status
 ```
 
-确认输出包含 `Logged in to github.com account Ken0507`，且 `Active account: true`。
+确认当前激活账号是 `ken-chen_scale`：输出里 `Logged in to github.com account ken-chen_scale` 下面是 `Active account: true`。hft-prop 是企业组织，要用 `ken-chen_scale` 操作；旧账号 `Ken0507` 不再用于 hft-prop（2026-11 核对：两个账号同时登录时，激活的必须是 `ken-chen_scale`）。
+
+若激活的不是它，切换：
+
+```bash
+gh auth switch -u ken-chen_scale
+```
 
 若未登录，执行：
 
@@ -56,6 +62,7 @@ gh auth login
 [BUG] 简短描述问题（动词+名词，<50字）
 [INFRA] 简短描述需求
 [FEATURE] 简短描述功能
+[RFC] 简短描述设计议题
 ```
 
 ### 正文模板
@@ -69,7 +76,7 @@ gh auth login
 
 **Date**: YYYY-MM-DD
 **Priority**: 🔴 P0 / 🟡 P1 / 🟢 P2
-**Type**: Bug / Feature / Tool
+**Type**: Bug / Infra / Feature / RFC
 **Related**: #{N}（如有关联 issue）
 
 ---
@@ -171,26 +178,32 @@ gh auth login
 gh issue create \
   --repo hft-prop/hft-sdk-issues \
   --title "[BUG] 标题" \
-  --label "bug,P1,needs-triage" \
+  --label "kind:bug,P1,project:hft_build,agent:claude-code" \
   --body "$(cat <<'ISSUE_BODY'
 {正文内容}
 ISSUE_BODY
 )"
 ```
 
-**标签组合规则**：
+**标签组合规则**（2026-11 按仓内现行用法核对）：每条 = 一个或多个 `kind:*` + 优先级 `P0`/`P1`/`P2` + `project:*` + `agent:claude-code`，需要时再加 `system-goal:*`。
 
-| 类型 | 必选标签 | 优先级标签 | 状态标签 |
-|------|----------|-----------|---------|
-| Bug  | `bug` | `P0`/`P1`/`P2` | `needs-triage` |
-| Infra 需求 | `infra` | `P0`/`P1`/`P2` | `needs-triage` |
-| Feature | `feature` | `P1`/`P2` | `needs-triage` |
+| 类型 | kind 标签 | 优先级 | project 标签 |
+|------|----------|--------|-------------|
+| Bug | `kind:bug` | `P0`/`P1`/`P2` | 按涉及项目选 |
+| Infra 需求 | `kind:infra` | `P0`/`P1`/`P2` | 按涉及项目选 |
+| Feature | 仓里没有 `kind:feature`：实现类选 `kind:infra`，需先讨论设计选 `kind:rfc` | `P1`/`P2` | 按涉及项目选 |
+| 设计讨论（`[RFC]`） | `kind:rfc` | `P0`/`P1`/`P2` | 按涉及项目选 |
+| 长周期跟踪 | `kind:tracking` | 视情况 | 按涉及项目选 |
+
+- `project:*` 可选值：`project:hft_build`（HFT C++ 构建与 SDK）、`project:cube_sdk`（cube 数据 SDK）、`project:quant_trading`、`project:workstation_ops`。
+- 其余 `kind:*`：`kind:research`、`kind:decision`、`kind:incident`、`kind:goal`。不确定时先 `gh label list --repo hft-prop/hft-sdk-issues` 核对。
+- 旧的类型 / 状态标签 `bug`、`infra`、`feature`、`needs-triage`、`confirmed` 仍在仓里，但近期提交不再使用，不要再打。
 
 ---
 
 ## 第五步：打 agent:claude-code 标签
 
-检查 `agent:claude-code` 标签是否已存在：
+第四步的命令已经带上 `agent:claude-code`（该标签在仓里已存在）。只有漏打时才需要本步。检查标签是否存在：
 
 ```bash
 gh label list --repo hft-prop/hft-sdk-issues | grep "agent:claude-code"
@@ -224,7 +237,7 @@ gh issue view <N> --repo hft-prop/hft-sdk-issues --json number,title,labels,stat
 
 确认输出包含：
 - `state: OPEN`
-- labels 含 `agent:claude-code`、优先级标签、类型标签、`needs-triage`（或已被 lgj 变更为 `confirmed`）
+- labels 含 `agent:claude-code`、优先级标签（`P0`/`P1`/`P2`）、`kind:*` 标签和 `project:*` 标签
 
 ---
 
@@ -240,8 +253,9 @@ gh issue view <N> --repo hft-prop/hft-sdk-issues --json number,title,labels,stat
 ## 执行清单
 
 - [ ] `gh issue list` 已查重，无重复
-- [ ] `gh auth status` 确认登录为 Ken0507
-- [ ] 标题以 `[BUG]` / `[INFRA]` / `[FEATURE]` 开头
+- [ ] `gh auth status` 确认当前激活账号为 ken-chen_scale
+- [ ] 标题以 `[BUG]` / `[INFRA]` / `[FEATURE]` / `[RFC]` 开头
+- [ ] 标签为 `kind:*` + `P0`/`P1`/`P2` + `project:*` + `agent:claude-code`，不用旧的 `bug` / `infra` / `feature` / `needs-triage`
 - [ ] 正文以 `🤖 **[cken/claude-code]**` 开头
 - [ ] Verification Guide 不含私有策略代码
 - [ ] `gh issue create` 返回了有效 URL
