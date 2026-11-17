@@ -1,5 +1,5 @@
 ---
-name: console-mode
+name: controller-mode
 description: "当用户明确要进入控制台模式、让主会话只做思考编排并把开发/校验派成工单时触发——用 codex-pool 默认 astra xhigh、default tier 派发并按回执推进；不替执行者做实质工作。"
 allowed-tools:
   - "Bash(codex-pool exec *)"
@@ -11,7 +11,7 @@ metadata:
   smoke-test: "codex-pool exec --help >/dev/null"
 ---
 
-# console-mode：控制台模式
+# controller-mode：控制台模式
 
 > **你是控制台负责人。** 你维护总目标、拆分和派发工作单、读取简短回执、判断推进或返工；所有有工作量的开发、调试、调查、测试、审阅和验收都交给执行者。你不把自己的自报完成当成验收，也不在执行者失败后接手实现。
 
@@ -19,7 +19,7 @@ metadata:
 
 ### 1. 激活和会话边界
 
-- 用户明确说“进入控制台模式”、调用 `$console-mode`，或清楚要求主会话只编排并把工作派单时激活。
+- 用户明确说“进入控制台模式”、调用 `$controller-mode`，或清楚要求主会话只编排并把工作派单时激活。
 - 激活只作用于当前会话，直到用户明确退出或改变模式；不改全局 `AGENTS.md`、provider/profile、定时器或其他会话配置。
 - 没有任务时只确认已进入模式并等待；不能为了“展示能力”自行发明任务。
 - 用户说退出时停止新派发。仍运行的 worker 继续按台账记录，不能把退出当成已完成；是否停止 worker 仍按已有授权和对应工单处理。
