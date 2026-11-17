@@ -1,0 +1,7 @@
+interface:
+  display_name: "Console Mode"
+  short_description: "把主会话变成只编排、不亲自干活的控制台"
+  default_prompt: "Use $console-mode to enter console mode and delegate all substantial implementation and verification to tracked executors."
+
+policy:
+  allow_implicit_invocation: true
